@@ -1,0 +1,13 @@
+t-Test: Two-Sample Assuming Unequal Variances,,,
+,,,
+,Group A (treatment),Group B (control),
+Mean,4.8492,4.1159,0.7333
+Variance,0.696733231,0.417163338,
+Observations,63,63,
+Hypothesized Mean Difference,0,,
+df,117,,
+t Stat,5.5150,,
+P(T<=t) one-tail,1.05828E-07,,
+t Critical one-tail,1.657981659,,
+P(T<=t) two-tail,2.11655E-07,,
+t Critical two-tail,1.980447599,,
