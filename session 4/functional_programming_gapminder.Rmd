@@ -1,7 +1,6 @@
 ---
 title: "Functional Programming"
 author: "Kostis Christodoulou"
-date: "2020-11-07"
 output:
   html_document:
     theme: flatly
