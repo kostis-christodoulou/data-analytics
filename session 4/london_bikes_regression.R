@@ -14,7 +14,8 @@ library(ggiraph)
 # Explore the relationship between bikes hired and a bunch of explanatory variables
 
 #read the CSV file
-bike <- read_csv(here::here("data", "london_bikes.csv"))
+bike <- read_csv(here::here("data", "london_bikes.csv")) %>% 
+  mutate(weekend = if_else((wday == "Sat" | wday == "Sun"), TRUE, FALSE))
 
 # fix dates using lubridate, and generate new variables for year, month, month_name, day, and day_of _week
 bike <- bike %>%   
@@ -201,14 +202,26 @@ ggplot(bike, aes(x=humidity, y= bikes_hired))+
 favstats(~bikes_hired, data = bike)
 # can you create a confidence interval for mean bikes_hired? What is the SE?
 
-
 model0 <- lm(bikes_hired ~ 1, data= bike)
 msummary(model0)
+
 
 # What is the regression's residual standard error? 
 # What is the intercept standard error? 
 
+# weekends or weekdays? Is there a difference
+t.test(bikes_hired ~ weekend, data= bike)
+
+
 # build a number of linear regression models where you try to explain
 # bikes_hired with (some of) the explanatory variables included in the file.
+
+
+model1 <- lm(bikes_hired ~ mean_temp, data= bike)
+msummary(model1)
+
+model2 <- lm(bikes_hired ~ mean_temp + wday, data= bike)
+msummary(model2)
+
 
 

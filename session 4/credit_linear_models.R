@@ -28,13 +28,13 @@ credit %>%
 
 ggplot(credit, aes(x=income, y=balance, colour=student))+
   geom_point()+
-  geom_smooth()
+  geom_smooth(method = "lm", se = FALSE)
+
 
 # balance vs income and own: is it parallel slopes or interaction?
-
 ggplot(credit, aes(x=income, y=balance, colour=married))+
   geom_point()+
-  geom_smooth()
+  geom_smooth(method = "lm", se = FALSE)
 
 
 model1 <- lm(balance ~ rating, data=credit)
@@ -51,6 +51,7 @@ mosaic::msummary(model4)
 
 colinear_model <- lm(balance ~ ., data = credit)
 mosaic::msummary(colinear_model)
+check_model(colinear_model)
 vif(colinear_model)
 autoplot(colinear_model)
 
@@ -59,6 +60,7 @@ mosaic::msummary(model5)
 
 autoplot(model5)
 vif(model5)
+check_model(model5)
 
 
 model6 <- lm(balance ~  income + rating +  age +  married, data=credit)

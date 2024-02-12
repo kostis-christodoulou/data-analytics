@@ -85,30 +85,31 @@ huxreg(model0, model1, model2, model3, model4,
   set_caption('Comparison of models')
 
 # model 4 rulz... but is it any good when it comes to predictions? 
-# using model4, estimate your earnings if you are a Shaq (!) who has
-# height = 216cm tall
+# using model4, estimate your earnings if you are a man who has
+# height = 175 to 185
+# gender = Male
 # age = 40 years 
-# genderMale = 1
+# race = "white"
+# hispanic = 0
 # and lets say he has a Graduate Diploma
 
-# Here are six imaginary constituencies, all with the same variables except
-# education, which goes up by five in each row
-shaq_at_40 <- tibble(height = 216,
+# Here is a dataframe with our imaginary man
+imaginary_man <- tibble(height = 175:185,
                      gender = "Male",
                      age = 40,
-                     race = "black",
+                     race = "white",
                      hispanic = 0,
                      ed_level = "Graduate Diploma")
-# When we plug this multi-row data frame into predict(), it'll generate a
-# prediction for each row
+
+# When we plug this data frame into predict(), it'll generate a prediction
 predict(model4, 
-        newdata = shaq_at_40, 
+        newdata = imaginary_man, 
         interval = "prediction")
 
 # We can also use broom::augment(). It's  essentially the same thing as predict(), 
 # but it adds the predictions and confidence intervals to the imaginary constituency 
 model_predictions <- broom::augment(model4, 
-                                    newdata = shaq_at_40,
+                                    newdata = imaginary_man,
                                     interval = "prediction")
 
 # Now we have two new columns named .fitted and .se.fit: .fitted is the
