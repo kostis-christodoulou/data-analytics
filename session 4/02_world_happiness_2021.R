@@ -10,16 +10,13 @@ library(skimr)
 library(car)
 library(ggfortify)
 
-url <- "https://happiness-report.s3.amazonaws.com/2023/DataForTable2.1WHR2023.xls"
+# data is taken from url <- "https://happiness-report.s3.amazonaws.com/2023/DataForTable2.1WHR2023.xls"
 
 # you can get ideas for further EDA at
 # https://ourworldindata.org/happiness-and-life-satisfaction
 
-# Download data to temporary file
-httr::GET(url, write_disk(happiness.temp <- tempfile(fileext = ".xls")))
-
 # Use read_excel to read it as dataframe
-world_happiness <- read_excel(happiness.temp,
+world_happiness <- read_excel("data/DataForTable2.1WHR2023.xls",
                     sheet = "Sheet1",
                     range = cell_cols("A:K")) %>% 
   janitor::clean_names() %>% 

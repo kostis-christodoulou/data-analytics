@@ -1,0 +1,224 @@
+---
+title: 'Winner plc- Testing for Salary Discrimination'
+author: "Write your name here"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    highlight: pygments
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+---
+
+```{r, setup, include=FALSE}
+library(tidyverse)
+library(GGally)
+library(skimr)
+library(mosaic)
+library(car)
+library(ggfortify)
+library(performance)
+
+
+options(digits=3)
+
+# Some customization.  You can alter or delete as desired (if you know what you are doing).
+trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  message = FALSE,
+  warning = FALSE,
+  size="small")   # slightly smaller font for code
+```
+
+
+# Introduction 
+
+This workshop does not have step-by-step guidelines. It gives you a good exercise in building regression models and illustrates the link between confidence intervals, hypothesis testing, and regression. 
+ 
+At the last board meeting of Winner Plc., the headquarters of a large multinational company, the issue was raised that women were being discriminated in the company, in the sense that the salaries were not the same for male and female executives. A quick analysis of a sample of 50 employees (of which 24 men and 26 women) revealed that the average salary for men was about ?8,400 higher than for women. This seemed like a considerable difference, so it was decided that a further analysis of the company salaries was warranted. 
+
+# Assignment 
+
+You are asked to carry out the analysis. The objective is to find out whether there is indeed a significant difference between the salaries of men and women, and whether the difference is due to discrimination or whether it is based on another, possibly valid, determining factor. As part of this assignment, 4 out of the 10 questions on Quiz 3 relate to this case.
+
+## Loading and inspecting the data
+
+
+```{r load-data, echo=FALSE}
+
+# while it's fine to know about working directories, I suggest 
+# you learn to use the package 'here' that makes organising files easy
+# https://malco.io/2018/11/05/why-should-i-use-the-here-package/
+winner <- read_csv(here::here('data', 'Winner_for_R.csv'))
+skim(winner)
+```
+
+# Relationship Salary - Gender ?
+
+The data frame `winner`  contains the salaries for the sample of 50 executives in the company. Can you conclude that there is a significant difference between the salaries of the male and female executives?
+
+Note that you can perform different types of analyses, and check whether they all lead to the same conclusion 
+
+.	Confidence intervals
+.	Hypothesis testing
+.	Correlation analysis
+.	Regression
+
+```{r, confint_single_valiables}
+# Summary Statistics of salary by gender
+favstats (salary ~ gender, data=winner)
+
+# t-Critical values for 95% intervals for male (n=24) and female (n=26) salaries
+qt(0.975, 23)  # t-critical for male 
+qt(0.975, 25)  # t-critical for female
+
+#can you create the CIs 'by hand'?
+
+#we can use filter to select only male and female salaries and assign them to different dataframes
+male_salary <- winner %>% 
+      filter (gender=="male")
+
+female_salary <- winner %>% 
+      filter (gender=="female")
+
+
+t.test( ~salary, data = male_salary)
+t.test( ~salary, data = female_salary)
+
+confint(t.test( ~salary, data = male_salary)) # constructs a CI for male salaries
+confint(t.test( ~salary, data = female_salary)) # constructs a CI for female salaries
+
+```
+
+We can also runa a hypothesis testing, assuming as a null hypithesis that the mean differnee in salaries is zero, or that, on average, men and women make the same amount of money.
+
+```{r, hypothesis_testing}
+# Summary Statistics of salary by gender
+favstats (salary ~ gender, data=winner)
+
+t.test(salary ~ gender, data = winner)
+
+# constructs a CI for the difference in salaries. Does it contain 0?
+confint(t.test( salary ~ gender, data = winner)) 
+
+```
+
+# Relationship Experience - Gender?
+
+At the board meeting, someone raised the issue that there was indeed a substantial difference between male and female salaries, but that this was attributable to other reasons such as differences in experience. A questionnaire send out to the 50 executives in the sample reveals that the average experience of the men is approximately 21 years, whereas the women only have about 7 years experience on average (see table below).
+
+```{r, experience_stats}
+# Summary Statistics of salary by gender
+favstats (experience ~ gender, data=winner)
+
+```
+
+Based on this evidence, can you conclude that there is a significant difference between the experience of the male and female executives? Perform similar analyses as in the previous section. Does your conclusion validate or endanger your conclusion about the difference in male and female salaries?  
+
+# Salary on Experience
+
+Someone at the meeting argues that clearly, a more thorough analysis of the relationship between salary and experience is required before any conclusion can be drawn about whether there is any gender-based salary discrimination in the company.
+
+Analyse the relationship between salary and experience. What can you conclude?
+
+##.	Visually inspect the data
+
+You can use `GGally:ggpairs()` to create a scatterplot and correlation matrix. Essentially, we pass our data frame `winner` to `GGally::ggpairs()` with no arguments.
+```{r, warning=FALSE}
+winner %>% 
+  select(gender, experience, salary) %>% 
+  ggpairs(aes(fill=gender, alpha = 0.2))+
+  theme_bw()
+```
+
+
+## Develop a sensible model
+`lm( Y ~ X, data= .)` allows for a regression analysis. It is best to assign this to an object, e.g., `model1 <- lm(Y~X, data= .)`.  When you carry out a regression analysis, in order to see the regression output, type `msummary(model1)`. Finally, `confint(model1)` gices us confidence intervals for the estimates.
+
+Write down the obtained equation, interpret it ("What does it mean?") and see whether it makes sense.
+
+```{r}
+model1 <- lm(salary ~ experience, data=winner)
+msummary(model1)
+confint(model1)
+```
+
+
+## Check the goodness-of-fit
+
+Evaluate (adjusted) R2. What proportion of the overall variability in salary does our model explain?
+
+## Examine significance of variables
+
+Evaluate t-values or p-values, and remove insignificant variables
+
+## Examine whether the model is well-specified
+
+Besides fitting the model, we should also have a look at the residuals. Do they seem to follow a Normal Distribution? Is there a pattern in the residuals, or do they appear to be 'random'? Is the variance of the residuals constant or does it seem to increase with increasing values of X?
+
+First, we plot the residuals vs. the fitted (or predicted) values. This is a standard regression diagnostic plot to check whether there is no pattern in the residuals, as well as to test for heteroscedasticity, or whether the residuals appear to have unequal, non-constant variance.
+
+The second thing we must check is whether the residuals follow a Normal distribution. A normal scores, or a QQ plot,  allows us to check for skewness, kurtosis and outliers. (Note that the heteroscedasticity may show as apparent non-normality.)
+
+```{r model1_residuals}
+autoplot(model1)
+```
+# Salary on Gender plus Experience
+
+Extend your analysis of the previous section to investigate whether there is salary discrimination based on gender or not.
+
+## Multiple regression in R
+
+To run a multiple regression model in R, use `lm( Y ~ X1 + X2 + X3, data= .)`
+
+```{r}
+model2 <- lm(salary ~ experience + gender, data=winner)
+msummary(model2)
+confint(model2)
+```
+
+## Colinearity
+
+Check for multicollinearity (i.e. correlated independent variables), and remove correlated independent variables from the model.
+
+## Competing Models
+
+Assess and compare different models to see which one is most sensible and fits the data best.
+
+# Improving the Model
+
+Again at the meeting, someone was looking at the results of the analysis of salary versus experience, and said that it was to be expected that an employee with more experience than another employee would have a higher salary. However, he argued that the difference in salary between two people with 2 and 4 years experience would be higher than the difference in salary between two people with 26 and 28 years experience!
+
+Can you find any indication that this is the case? If yes, how can you modify your analysis to take this into account?
+
+The `makeFun()` function from the `mosaic` package can be used to display the predicted values from a regression model.
+
+```{r}
+#let us look at the scatterplot of experience on salary, and add a linear trendline
+ggplot(winner, aes(x=experience, y = salary))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme_minimal()
+
+#let us look at the scatterplot of experience on salary, coloured by gender
+ggplot(winner, aes(x=experience, y = salary, colour = gender))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme_minimal()
+
+# What if its not a straight line?  
+# use geom_smooth() to let R fit what it thinks looks like the best line
+ggplot(winner, aes(x=experience, y = salary, colour = gender))+
+  geom_point()+
+  geom_smooth(se=FALSE)+
+  theme_minimal()
+```
+
+
+
+# Closing Remarks
+
+Do you have any additional thoughts on whether there might be a gender disadvantage in the firm or not?

@@ -7,13 +7,15 @@ library(GGally)
 library(ggrepel)
 library(patchwork)
 
+# What happens with outliers?
 
 
 # get World bank data using wbstats
-indicators <- c("SP.POP.TOTL",
-                "NY.GDP.PCAP.KD",
-                "NY.GDP.MKTP.CD"
+indicators <- c("SP.POP.TOTL", # population total https://data.worldbank.org/indicator/SP.POP.TOTL
+                "NY.GDP.PCAP.KD", # GDP/capita PPP, (constant 2017 international $)  https://data.worldbank.org/indicator/NY.GDP.PCAP.PP.KD 
+                "NY.GDP.MKTP.PP.KD" # GDP, PPP (constant 2017 international $) https://data.worldbank.org/indicator/NY.GDP.MKTP.PP.KD 
 ) 
+
 
 
 worldbank_data <- wb_data(country="countries_only", #countries only- no aggregates like Latin America, Europe, etc.
@@ -80,6 +82,7 @@ my_data <- left_join(medals_iso,
     gdp_per_cap_2010 = ny_gdp_pcap_kd,
     population = sp_pop_totl
   )
+
 
 my_data %>% 
   select(total, gdp_current_usd, gdp_per_cap_2010, population) %>% 

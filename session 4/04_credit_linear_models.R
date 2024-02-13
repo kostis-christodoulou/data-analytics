@@ -15,8 +15,8 @@ credit <- read_csv(here::here('data', 'credit.csv'))
 
 favstats(~balance, data=credit)
 
-model1 <- lm(balance~1, data=credit)
-summary(model1)
+model0 <- lm(balance~1, data=credit)
+summary(model0)
 
 credit %>% 
   select(income, limit, rating, cards, age, education, balance) %>% 
@@ -53,7 +53,6 @@ colinear_model <- lm(balance ~ ., data = credit)
 mosaic::msummary(colinear_model)
 check_model(colinear_model)
 vif(colinear_model)
-autoplot(colinear_model)
 
 model5 <- lm(balance ~ . - limit, data=credit)
 mosaic::msummary(model5)
@@ -66,8 +65,19 @@ check_model(model5)
 model6 <- lm(balance ~  income + rating +  age +  married, data=credit)
 mosaic::msummary(model6)
 
-autoplot(model6)
+check_model(model6)
 vif(model6)
 
+# ---------------------- 5. Comparison of models ----------------------
+
+huxreg(model0, model1, model2, model3, model4, model5, model6,
+       statistics = c('#observations' = 'nobs',
+                      'R squared' = 'r.squared',
+                      'Adj. R Squared' = 'adj.r.squared',
+                      'Residual SE' = 'sigma'),
+       bold_signif = 0.05,
+       stars = NULL
+) %>%
+  set_caption('Comparison of models')
 
 
