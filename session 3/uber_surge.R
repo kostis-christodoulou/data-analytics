@@ -22,6 +22,15 @@ uber_surge%>%
   skim()
 
 uber_surge %>% 
+  select(-region) %>% 
+  ggpairs()+
+  theme_bw()
+
+
+
+
+
+uber_surge %>% 
   ggpairs(aes(colour = region, alpha = 0.5))+
   theme_bw()
 
@@ -31,14 +40,16 @@ mosaic::msummary(model0)
 
 # ---------------------- 1. Relationship time vs number of drivers ? ----------------------
 
+ggplot(uber_surge, aes(x = number_of_drivers, 
+                       y = pick_up_time_min
+                       ))+
+  geom_point()+
+  geom_smooth(method = "lm",
+              se = FALSE)+
+  theme_bw()
 
-ggplot(uber_surge, aes(x=number_of_drivers, y = pick_up_time_min, colour = region))+
-  geom_point(alpha = 0.7) +
-  theme_minimal()+
-  geom_smooth(method = 'lm',
-              se = FALSE)
 
-# regression of salary by gender
+# regression of tick vs number of drivers
 model1 <- lm(pick_up_time_min ~ number_of_drivers, data = uber_surge)
 mosaic::msummary(model1)
 
@@ -65,16 +76,32 @@ uber_surge %>%
   ggpairs()+
   theme_bw()
 
-# ---------------------- 4. pick up time on drivers + region ? ----------------------
+# ---------------------- 4. pick up time on  surge price ? ----------------------
 
-model3 <- lm(pick_up_time_min ~ number_of_drivers + region, data = uber_surge)
+# regression model
+model3 <- lm(pick_up_time_min ~ surge_price, data = uber_surge)
+mosaic::msummary(model3)
+
+
+# ---------------------- 5. pick up time on drivers + region ? ----------------------
+
+ggplot(uber_surge, aes(x = number_of_drivers, 
+                       y = pick_up_time_min, 
+                       colour = region))+
+  geom_point(alpha = 0.7) +
+  theme_minimal()+
+  geom_smooth(method = 'lm',
+              se = FALSE)
+
+
+model4 <- lm(pick_up_time_min ~ number_of_drivers + region, data = uber_surge)
 mosaic::msummary(model3)
 performance::check_model(model3)
 
 
 # ---------------------- 5. Comparison of models ----------------------
 
-huxreg(model0, model1, model2, model3,
+huxreg(model0, model1, model2, model3, model4,
        statistics = c('#observations' = 'nobs',
                       'R squared' = 'r.squared',
                       'Adj. R Squared' = 'adj.r.squared',
