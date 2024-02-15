@@ -1,0 +1,475 @@
+---
+title: "TfL Bikes: Explore the relationship between bikes hired and a number of variables"
+author: "Your name goes here"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    highlight: zenburn
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(GGally)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(huxtable)
+library(lubridate)
+library(ggfortify)
+library(performance)
+library(ggiraph)
+
+# Explore the relationship between bikes hired and a bunch of explanatory variables
+
+
+```
+
+
+# London Bikes data
+
+We'll use data from http://www.tfl.gov.uk to analyse usage of the London Bike Sharing scheme. This data has already been downloaded for you and exists in a `CSV` (Comma Separated Values) file that you have to read in to R. 
+
+There is no dropdown menu to read in your data to R, so instead we use functions like `read_csv` to load data from file into R objects.  
+
+```{r, warning= FALSE, message= FALSE}
+
+#read the CSV file
+bike <- read_csv(here::here("data", "london_bikes.csv")) %>% 
+  mutate(weekend = if_else((wday == "Sat" | wday == "Sun"), TRUE, FALSE))
+
+
+```
+
+## Cleaning our data 
+
+Sometimes our data needs a bit of 'cleaning'. For instance, `day_of_week` is variable type character, or `chr`. We should, however, treat it as a categorical, or `factor` variable and relevel it, so Monday is the first level of the factor (or first day of week), etc. 
+
+R is fairly sensitive with dates. When you read a CSV file, the date may be in different formats. For instance, Christmas 2017 could be input as 12-25-2017, 25.12.2017, 25 Dec 2017, Dec 25, 2017, etc. To be consistent, we use lubridate's `ymd` function, and force variable `Day` to be a date in the format YYYY-MM-DD
+
+Finally, we can turn `season` from 1, 2, 3, 4, to words like Winter, Spring, etc.
+
+We will be talking more about data wrangling later, but for now just execute the following piece of code.
+
+```{r}
+# fix dates using lubridate, and generate new variables for year, month, month_name, day, and day_of _week
+bike <- bike %>%   
+  mutate(
+    year=year(date),
+    month = month(date),
+    month_name=month(date, label = TRUE),
+    day_of_week = wday(date, label = TRUE)) 
+
+# generate new variable season_name to turn seasons from numbers to Winter, Spring, etc
+bike <- bike %>%  
+  mutate(
+    season_name = case_when(
+      month_name %in%  c("Dec", "Jan", "Feb")  ~ "Winter",
+      month_name %in%  c("Mar", "Apr", "May")  ~ "Spring",
+      month_name %in%  c("Jun", "Jul", "Aug")  ~ "Summer",
+      month_name %in%  c("Sep", "Oct", "Nov")  ~ "Autumn",
+    ),
+    season_name = factor(season_name, 
+                         levels = c("Winter", "Spring", "Summer", "Autumn")))
+    
+#examine the structure of the datafame
+skim(bike)
+  
+```
+
+
+
+## Summary Statistics 
+
+Besides the number of bikes hired each day, we also have data on the weather for that day
+
+Having loaded and cleaned our data, we can create summary statistics using mosaic's `favstats`. This is uni-variate analysis, so in our mosaic syntax we will use `favstats(~ bikes_hired, data= bike)`.  We also want to get an overall, time-series plot of bikes over time; for the latter, we just create a scatter plot of `bikes_hired` vs `Day`.
+
+```{r, warning= FALSE}
+
+favstats(~ bikes_hired, data= bike)
+
+```
+
+While this analysis shows us overall statistics, what if we wanted to get summary statistics by `year`, `day_of_week`,  `month`, or `season`? Mosaic's syntax `Y ~ X` alows us to facet our analysis of a variable Y by another variable X using the syntax `favstats( Y ~ Z, data=...)`
+
+
+```{r}
+
+favstats(bikes_hired ~ year, data=bike)
+favstats(bikes_hired ~ day_of_week, data=bike)
+favstats(bikes_hired ~ month_name, data=bike)
+favstats(bikes_hired ~ season_name, data=bike)
+
+```
+
+
+# Exploratory Data Analysis
+
+## Time series plot of bikes rented
+
+
+
+While summary statistics allow us to quickly disover key metrics that represent the data, they are often not sufficient by themselves. Often, it is useful to represent the data graphically (or visually) to uncover information that is critical for decision making, such as trends, patterns and outliers. 
+
+In this section we will create a time-series scatter-plot that shows the number of bikes hired on each day. We will use the `ggplot2` library. 
+
+Creating a basic plot is a two-step process. The first step is the specify the data frame and the axes by using the syntax: `ggplot(data frame, aes(x=variable, y=variable)`. The second step is to specify the plot that we want. In this case, we want a scatter (point) plot using `geom_point()` after a `+` sign. 
+
+
+```{r, warning= FALSE}
+
+ggplot(bike, aes(x=date, y=bikes_hired))+
+  geom_smooth()+
+  geom_point(alpha = 0.3)+
+  theme_bw()+
+  NULL
+
+```
+
+
+## Creating a Plot
+
+If you were a consultant or an analyst, would you be comfortable showing the plot you created in the previous section to your client? Think about it. Probably not. 
+
+In this section, we will refine our plot to make it presentable (and to communicate the information more effectively). 
+
+Without a title, it becomes harder to comprehend the information presented in the plot. In addition, the labels of the X and Y axes are set to the respective variable (column) names by default, and are not formatted in the same way. This is unprofessional, and in some cases, confusing.
+
+We start by using the `labs()` function to specify the title, the X-axis label and the Y-axis label. Notice that we are simply adding another layer to the previous plot by using the `+` symbol. 
+
+```{r, warning= FALSE}
+
+
+ggplot(bike, aes(x=date, y=bikes_hired))+
+  geom_point(alpha = 0.3)+
+  geom_smooth()+
+  theme_bw()+
+  labs(
+    title    = "TfL Daily Bike Rentals",
+    x        = "Day",
+    y        = "Number of Bikes Hired"
+  )+
+  NULL
+
+```
+
+The plot looks much better, but we can further improve the look of the plot using the default themes in R. The graph below uses a default theme called `theme_light()`.
+
+```{r, warning= FALSE}
+
+ggplot(bike, aes(x=date, y=bikes_hired))+
+  geom_point(alpha=0.5) +
+  geom_smooth(color="red", size=1.5) +
+  theme_bw()+
+  labs(
+    title    = "TfL Daily Bike Rentals",
+    x        = "Day",
+    y        = "Number of Bikes Hired"
+  )+
+  theme_light()+
+  NULL
+
+```
+
+
+## Further graphs
+
+```{r}
+# Histogram of bikes rented
+ggplot(bike, aes(x=bikes_hired))+
+  geom_histogram()+
+  theme_bw()+
+  NULL
+
+# Histogram faceted by season_name
+ggplot(bike, aes(x=bikes_hired))+
+  geom_histogram()+
+  facet_wrap(~season_name)+
+  theme_bw()+
+  NULL
+
+# Histogram faceted by month_name
+ggplot(bike, aes(x=bikes_hired))+
+  geom_histogram()+
+  facet_wrap(~month_name)+
+  theme_bw()+
+  NULL
+
+# Histogram faceted by month_name in 4 rows
+ggplot(bike, aes(x=bikes_hired))+
+  geom_histogram()+
+  facet_wrap(~month_name, nrow = 4)+
+  theme_bw()+
+  NULL
+
+
+# Density plot 
+ggplot(bike, aes(x=bikes_hired))+
+  geom_density()+
+  theme_bw()+
+  NULL
+
+# Density plot filled by season_name 
+ggplot(bike, aes(x=bikes_hired))+
+  geom_density(aes(fill=season_name), alpha = 0.3)+
+  theme_bw()+
+  NULL
+
+# Density plot filled by season_name, and faceted by season_name
+ggplot(bike, aes(x=bikes_hired))+
+  geom_histogram(aes(fill=season_name), alpha = 0.5)+
+  facet_wrap(~season_name, nrow = 4)+
+  theme_minimal()+
+  
+  #remove legend to the right
+  theme(legend.position = "none")+
+  NULL
+
+# Density plot filled by season_name, and faceted by month_name
+ggplot(bike, aes(x=bikes_hired))+
+  geom_density(aes(fill=season_name), alpha = 0.3)+
+  facet_wrap(~month_name, nrow = 4)+
+  theme_bw()+
+  theme(legend.position="none")+
+  NULL
+
+#Boxplot of bikes_hired  by month
+# since 'month' is a number, it treats it as a continuous variable; hence we get just one box
+ggplot(bike, aes(x=month, y= bikes_hired))+
+  geom_boxplot()+
+  theme_bw()+
+  NULL
+
+
+#Boxplot  by month_name
+ggplot(bike, aes(x=month_name, y= bikes_hired))+
+  geom_boxplot()+
+  theme_bw()+
+  NULL
+
+
+#Boxplot by month_name
+ggplot(bike, aes(x=month_name, y= bikes_hired, fill=season_name))+
+  geom_boxplot()+
+  theme_bw()+
+  NULL
+
+
+#Violin plot by month_name
+ggplot(bike, aes(x=month_name, y= bikes_hired))+
+  geom_violin()+
+  theme_bw()+
+  NULL
+
+
+
+# bikes_hired vs. weather features
+ggplot(bike, aes(x=mean_temp, y= bikes_hired))+
+  geom_point()+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme_bw()+
+  NULL
+
+ggplot(bike, aes(x=mean_temp, y= bikes_hired, colour=season_name))+
+  geom_point(alpha = 0.2)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme_bw()+
+  #  facet_wrap(~season_name, ncol=1)+
+  NULL
+
+
+temperature_by_season <- ggplot(bike, aes(x=mean_temp, y= bikes_hired,colour=season_name)) +
+  
+  # rather than using geom_point(), we use geom_point_interactive()
+  geom_point_interactive(aes( 
+    tooltip = glue::glue("Mean Temp: {mean_temp}\nBikes Hired: {bikes_hired}\nDate: {date}")),
+    alpha = 0.3) +
+  geom_smooth_interactive(se = FALSE, method = lm)+
+  theme_bw()+
+  facet_wrap(~season_name, ncol=1)+
+  #  facet_grid(season_name ~ weekend)+
+  
+  theme(legend.position = "none")+
+  NULL
+
+# you have created the ggplot object, you now pass it to
+girafe(
+  ggobj = temperature_by_season
+)
+
+###### bikes on humidity
+ggplot(bike, aes(x=humidity, y= bikes_hired))+
+  geom_point()+
+  geom_smooth(method = "lm")+
+  theme_bw()+
+  NULL
+
+```
+
+# Model building
+
+## Correlation - Scatterplot matrix
+
+Besides the number of bikes rented out on a given day, we have also downloaded weather data for London such as `mean_temp`, `humidity`, `pressure`, `precipitation`, etc. that measure weather conditions on a single day. It may be the case that more bikes are rented out when it's warmer? Or how can we estimate the effect of rain on rentals?
+
+Your task is to build a regression model that helps you explain the number of rentals per day.  
+
+
+ Let us select a few of these numerical variables and create a scatterplot-correlation matrix
+
+```{r, warning= FALSE, message=FALSE}
+
+bike %>% 
+  select(cloud_cover, humidity, pressure, radiation, precipitation, sunshine, mean_temp, bikes_hired) %>% 
+  GGally::ggpairs()
+
+```
+
+
+## Weekend or weekdays? Is there a difference?
+
+```{r}
+t.test(bikes_hired ~ weekend, data= bike)
+```
+
+## Model 0: using the mean to predict `bikes_hired`
+
+We start the naive model where we  just use the average to predict how many bikes we are going to rent out on a single day
+
+```{r}
+favstats(~bikes_hired, data = bike)
+# can you create a confidence interval for mean bikes_hired? What is the SE?
+
+model0 <- lm(bikes_hired ~ 1, data= bike)
+msummary(model0)
+
+
+```
+
+What is the regression's residual standard error? What is the intercept standard error? 
+
+
+
+## Model 1: `bikes_hired` on `mean_temp`
+
+```{r}
+# Define the model
+model1 <- lm(bikes_hired ~ mean_temp, data = bike)
+
+# look at model estimated
+msummary(model1)
+
+# Diagnostics
+autoplot(model1)
+check_model(model1)
+```
+
+
+  - Is the effect of `mean_temp` significant? Why?
+  - What proportion of the overall variability in bike rentals does temperature explain?
+
+## Model 2: `bikes_hired` on `mean_temp` plus `weekend`
+
+```{r}
+# Define the model
+model2 <- lm(bikes_hired ~ mean_temp + weekend, data = bike)
+
+# look at model estimated
+msummary(model2)
+
+# Diagnostics
+autoplot(model2)
+check_model(model2)
+```
+
+- Fit a regression model called `model2` with the following explanatory variables: `mean_temp` and `weekend` 
+
+  - Is the effect of `mean_temp` significant? Why?
+  - What proportion of the overall variability  does this model explain?
+What is the meaning of the effect (slope) of `weekendTRUE`? What % of the variability of bikes_hired does your model explain?
+
+
+
+
+## Model 3: `bikes_hired` on `mean_temp` plus `wday`
+
+```{r}
+# Define the model
+model3 <- lm(bikes_hired ~ mean_temp + wday, data = bike)
+
+# look at model estimated
+msummary(model3)
+
+# Diagnostics
+autoplot(model3)
+check_model(model3)
+```
+
+
+What is the meaning of the effect (slope) of, e.g., `wdayMon`? What % of the variability of bikes_hired does your model explain?
+
+
+## **Further variables/questions to explore on your own**
+
+Our dataset has many more variables, so here are some ideas on how you can extend your analysis
+
+  - Are other weather variables useful in explaining `bikes_hired`?
+  - We also have data on days of the week, month of the year, etc. Could those be helpful?
+  - What's the best model you can come up with? 
+  - Is this a regression model to predict or explain? If we use it to predict, what's the Residual SE?
+
+## Ploting your best model predicitons vs reality
+
+Let us say that your best model is `model3.` How do the predictions of your model compare to the actual data?
+
+```{r}
+# plot actual data vs predicted data
+
+my_best_model <- broom::augment(model3) %>% 
+  mutate(day=row_number())
+
+
+
+# Plot fitted line and residuals
+ggplot(my_best_model, aes(x=day, y = bikes_hired)) +
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
+  
+```
+
+## Diagnostics, collinearity, summary tables
+
+As you keep building your models, it makes sense to:
+
+1. Check the residuals, using `performance::check_model(model_x)`. You will always have some deviation from normality, especially for very high values of `n`
+1. As you start building models with more explanatory variables, make sure you use `car::vif(model_x)` to calculate the **Variance Inflation Factor (VIF)** for your predictors and determine whether you have colinear variables. A general guideline is that a VIF larger than 10 is large, and your model may suffer from collinearity. Remove the variable in question and run your model again without it.
+
+
+## Comparison of different models
+
+Create a summary table, using `huxtable` (https://am01-sep23.netlify.app/example/modelling_side_by_side_tables/) that shows which models you worked on, which predictors are significant, the adjusted $R^2$, and the Residual Standard Error. If you want to add more models, just make sure you do not forget the `comma ,` after the last model, as shown below
+
+```{r}
+
+# produce summary table comparing models using huxtable::huxreg()
+huxreg(model0, model1, model2, model3, 
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05
+) %>% 
+  set_caption('Comparison of models')
+
+```
+
+
+
