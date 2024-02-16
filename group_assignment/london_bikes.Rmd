@@ -1,6 +1,6 @@
 ---
 title: "TfL Bikes: Explore the relationship between bikes hired and a number of variables"
-author: "Your name goes here"
+author: "Your Study Group number/names go here"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -23,6 +23,7 @@ library(lubridate)
 library(ggfortify)
 library(performance)
 library(ggiraph)
+library(car)
 
 # Explore the relationship between bikes hired and a bunch of explanatory variables
 
@@ -451,6 +452,15 @@ As you keep building your models, it makes sense to:
 
 1. Check the residuals, using `performance::check_model(model_x)`. You will always have some deviation from normality, especially for very high values of `n`
 1. As you start building models with more explanatory variables, make sure you use `car::vif(model_x)` to calculate the **Variance Inflation Factor (VIF)** for your predictors and determine whether you have colinear variables. A general guideline is that a VIF larger than 10 is large, and your model may suffer from collinearity. Remove the variable in question and run your model again without it.
+
+```{r}
+# Check VIF
+
+vif(model2)
+vif(model3)
+
+```
+
 
 
 ## Comparison of different models
