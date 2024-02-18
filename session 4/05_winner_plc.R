@@ -94,6 +94,11 @@ mosaic::msummary(model4)
 autoplot(model4)
 car::vif(model4)
 
+model4a <- lm(salary ~ experience, data = winner)
+mosaic::msummary(model4a)
+
+
+
 model5 <- lm(salary ~ sqrt(experience) + gender, data = winner)
 mosaic::msummary(model5)
 autoplot(model5)

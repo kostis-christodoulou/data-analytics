@@ -20,9 +20,9 @@ library(mosaic)
 library(car)
 library(ggfortify)
 library(performance)
+library(huxtable)
 
-
-options(digits=3)
+options(digits=4)
 
 # Some customization.  You can alter or delete as desired (if you know what you are doing).
 trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
@@ -104,6 +104,9 @@ t.test(salary ~ gender, data = winner)
 # constructs a CI for the difference in salaries. Does it contain 0?
 confint(t.test( salary ~ gender, data = winner)) 
 
+model1 <- lm(salary ~ gender, data = winner)
+msummary(model1)
+
 ```
 
 # Relationship Experience - Gender?
@@ -141,9 +144,9 @@ winner %>%
 Write down the obtained equation, interpret it ("What does it mean?") and see whether it makes sense.
 
 ```{r}
-model1 <- lm(salary ~ experience, data=winner)
-msummary(model1)
-confint(model1)
+model2 <- lm(salary ~ experience, data=winner)
+msummary(model2)
+confint(model2)
 ```
 
 
@@ -164,7 +167,7 @@ First, we plot the residuals vs. the fitted (or predicted) values. This is a sta
 The second thing we must check is whether the residuals follow a Normal distribution. A normal scores, or a QQ plot,  allows us to check for skewness, kurtosis and outliers. (Note that the heteroscedasticity may show as apparent non-normality.)
 
 ```{r model1_residuals}
-autoplot(model1)
+autoplot(model2)
 ```
 # Salary on Gender plus Experience
 
@@ -175,18 +178,28 @@ Extend your analysis of the previous section to investigate whether there is sal
 To run a multiple regression model in R, use `lm( Y ~ X1 + X2 + X3, data= .)`
 
 ```{r}
-model2 <- lm(salary ~ experience + gender, data=winner)
-msummary(model2)
-confint(model2)
+model3 <- lm(salary ~ experience + gender, data=winner)
+msummary(model3)
+confint(model3)
 ```
 
 ## Colinearity
 
 Check for multicollinearity (i.e. correlated independent variables), and remove correlated independent variables from the model.
 
-## Competing Models
+```{r}
+vif(model3)
+```
 
-Assess and compare different models to see which one is most sensible and fits the data best.
+No VIFs aere greater than 10, so we do not have any colinearity issues... but `gender` is no longer significant, so let us remove it from the regression.
+
+```{r}
+model4 <- lm(salary ~ experience, data=winner)
+msummary(model4)
+confint(model4)
+```
+
+
 
 # Improving the Model
 
@@ -216,7 +229,31 @@ ggplot(winner, aes(x=experience, y = salary, colour = gender))+
   geom_smooth(se=FALSE)+
   theme_minimal()
 ```
+```{r}
+model5 <- lm(salary ~ sqrt(experience) + gender, data = winner)
+mosaic::msummary(model5)
+autoplot(model5)
+car::vif(model5)
 
+model6 <- lm(salary ~ sqrt(experience), data = winner)
+mosaic::msummary(model6)
+autoplot(model5)
+```
+
+## Competing Models
+
+Assess and compare different models to see which one is most sensible and fits the data best.
+```{r}
+huxreg(model1, model2, model3, model4, model5, model6,
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05, 
+       stars = NULL
+) %>% 
+  set_caption('Comparison of models')
+```
 
 
 # Closing Remarks
