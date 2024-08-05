@@ -2,7 +2,6 @@ library(tidyverse)
 library(lubridate)
 library(here)
 library(mosaic)
-library(infer)
 library(ggridges)
 library(viridis)
 
