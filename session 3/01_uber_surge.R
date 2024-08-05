@@ -69,7 +69,7 @@ performance::check_model(model2)
 autoplot(model2)
 car::vif(model2)
 
-# High colinearity... number of drivers and ruge price have a correlation of -0.98
+# High colinearity... number of drivers and surge price have a correlation of -0.98
 
 uber_surge %>% 
   select(-region) %>% 
@@ -110,4 +110,3 @@ huxreg(model0, model1, model2, model3, model4,
        stars = NULL
 ) %>%
   set_caption('Comparison of models')
-

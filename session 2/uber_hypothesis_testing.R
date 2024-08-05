@@ -2,8 +2,13 @@ library(tidyverse)
 library(skimr)
 library(mosaic)
 library(lubridate)
+library(janitor)
 
-uber <- read_csv(here::here('data', 'uber.csv'))
+
+uber <- read_csv(here::here('data', 'uber.csv')) %>% 
+  janitor::clean_names() %>% 
+  mutate(period_start = lubridate::dmy_hm(period_start)
+  )
 
 # Plot cancellation over time
 

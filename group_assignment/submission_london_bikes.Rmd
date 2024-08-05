@@ -1,0 +1,460 @@
+---
+title: "TfL Bikes: How did the groups fare?"
+author: "Kostis Christodoulou"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    highlight: zenburn
+    theme: flatly
+---
+
+```{r load-libraries, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(GGally)
+library(here)
+library(skimr)
+library(janitor)
+library(broom)
+library(huxtable)
+library(lubridate)
+library(ggfortify)
+library(performance)
+library(ggiraph)
+library(car)
+
+
+
+
+```
+
+
+# London Bikes data
+
+We'll use data from http://www.tfl.gov.uk to analyse usage of the London Bike Sharing scheme. The data you had to fit your model was from July 2010 to Jul 2023. This was the **training** set of your data, and the available variables are as follows
+
+
+```{r, warning= FALSE, message= FALSE, echo=FALSE}
+
+#read the CSV file
+bike <- read_csv(here::here("data", "london_bikes.csv")) %>% 
+  mutate(weekend = if_else((wday == "Sat" | wday == "Sun"), TRUE, FALSE))
+
+```
+
+
+```{r, echo=FALSE}
+# fix dates using lubridate, and generate new variables for year, month, month_name, day, and day_of _week
+bike <- bike %>%   
+  mutate(
+    year=year(date),
+    month = month(date),
+    month_name=month(date, label = TRUE),
+    day_of_week = wday(date, label = TRUE)) 
+
+# generate new variable season_name to turn seasons from numbers to Winter, Spring, etc
+bike <- bike %>%  
+  mutate(
+    season_name = case_when(
+      month_name %in%  c("Dec", "Jan", "Feb")  ~ "Winter",
+      month_name %in%  c("Mar", "Apr", "May")  ~ "Spring",
+      month_name %in%  c("Jun", "Jul", "Aug")  ~ "Summer",
+      month_name %in%  c("Sep", "Oct", "Nov")  ~ "Autumn",
+    ),
+    season_name = factor(season_name, 
+                         levels = c("Winter", "Spring", "Summer", "Autumn"))) %>% 
+  mutate(set = "train")
+
+glimpse(bike)  
+```
+
+I wanted to test how well groups model fared with unseen data, namely data from Aug 2023 to Jan 2024. This is the **testing** data, shown in red below
+
+```{r, warning= FALSE, message= FALSE, echo=FALSE}
+#read the CSV file
+new_bike <- read_csv(here::here("bikes_Aug23_Jan24.csv")) %>% 
+  mutate(
+    year=year(date),
+    month = month(date),
+    month_name=month(date, label = TRUE),
+    day_of_week = wday(date, label = TRUE)) %>% 
+  mutate(
+    season_name = case_when(
+      month_name %in%  c("Dec", "Jan", "Feb")  ~ "Winter",
+      month_name %in%  c("Mar", "Apr", "May")  ~ "Spring",
+      month_name %in%  c("Jun", "Jul", "Aug")  ~ "Summer",
+      month_name %in%  c("Sep", "Oct", "Nov")  ~ "Autumn",
+    ),
+    season_name = factor(season_name, 
+                         levels = c("Winter", "Spring", "Summer", "Autumn"))) %>% 
+  mutate(set = "test")
+```
+
+
+```{r, warning= FALSE, echo=FALSE}
+
+# join both files
+
+bike %>% 
+  bind_rows(new_bike) %>% 
+  ggplot()+
+  aes(x=date, y=bikes_hired, colour = set)+
+  geom_point(alpha = 0.3)+
+  theme_bw()+
+labs(x=NULL, y = NULL, colour = "Data Set", 
+     label = "TfL Bike Rentals, Jul 2010- Jan 2024")+
+NULL
+
+```
+
+
+
+# Model building
+
+The following is a list of models that were submitted by each study group, `model1` corresponds to the best model submitted by Study Group 1, etc.
+
+There are two additional models:
+
+- `model0` is the naive mean model. To predict how many bikes we will rent on a day, we just use the arithmetic mean
+- `model99` is a hybrid model, which uses the explanatory variables we have, as well as an auto-regressive AR(1) variable, meaning today's rentals are also explained by what happened yesterday.
+
+```{r}
+
+# Define the models- number corresponds to study group
+model1 <- lm(bikes_hired ~ year+ wday + month + cloud_cover + humidity + pressure + 
+               radiation + precipitation + sunshine +mean_temp + season_name, data = bike)
+
+
+model2 <- lm(bikes_hired ~ month_name+day_of_week+humidity+pressure+
+               radiation+precipitation+snow_depth+sunshine+
+               mean_temp+max_temp, data=bike)
+
+#for model3, I do not use covidTRUE and period, as I dont know how they were defined
+# impact on Adj R2 is roughly 1% and residual SE is 5562 instead of 5657 in this definition
+model3 <- lm(bikes_hired ~ mean_temp + wday + humidity + pressure + 
+               precipitation +season_name+
+               sunshine + radiation + snow_depth + month, data = bike)
+
+# Group 4 had the highesrt feature engineering of all. Here is a variant without 
+# creating new variables
+model4 <- lm(bikes_hired ~ lag(bikes_hired,1) + mean_temp + weekend + season_name + 
+               I(year-2009) + humidity+ sqrt(precipitation) + cloud_cover, data = bike)
+
+# unsure how they defined weekday logical
+model5 <- lm(bikes_hired ~ mean_temp + sunshine + radiation + weekend + 
+               precipitation + snow_depth + humidity, data = bike)
+
+# model6 interactions galore. Explanation?
+model6 <- lm(bikes_hired ~ mean_temp*min_temp*max_temp*precipitation*sunshine+
+               snow_depth + pressure + wday + year + season_name, data = bike)
+
+model7 <- lm(bikes_hired ~ humidity + year + week + cloud_cover + 
+               pressure + precipitation + min_temp + day_of_week, data = bike)
+
+
+# Let us add a few more models
+
+# Define a model using the mean (average)
+model0 <- lm(bikes_hired ~ 1, data = bike)
+
+# define a simpler model with AR(1)
+# Auto-regressive of lag 1
+model99 <- lm(bikes_hired ~ lag(bikes_hired,1) +
+               mean_temp + wday + 
+               humidity + precipitation + sunshine + radiation, data = bike) 
+```
+
+
+# Comparison of different models
+
+
+
+```{r}
+
+# produce summary table comparing models using huxtable::huxreg()
+# produce summary table comparing models using huxtable::huxreg()
+huxreg(model1, model2, model3, model4, model5, model6, model7, model0, model99,
+       statistics = c('#observations' = 'nobs', 
+                      'R squared' = 'r.squared', 
+                      'Adj. R Squared' = 'adj.r.squared', 
+                      'Residual SE' = 'sigma'), 
+       bold_signif = 0.05
+) %>% 
+  set_caption('Comparison of models')
+
+```
+
+
+# Collinearity fοr each of the models
+
+
+```{r}
+# Check VIF
+
+vif(model1)
+vif(model2)
+
+vif(model3)
+
+vif(model4)
+
+vif(model5)
+
+# because of interaction terms
+vif(model6, type = "predictor")
+
+vif(model7)
+
+vif(model99)
+
+```
+
+
+
+
+
+# Calculating RMSE (Root Mean Squared Error) of Testing Data
+
+The RMSE (Root Mean Squared Error) is the best tool to measure how much we may have overfitted a model. 
+We always expect the RMSE in the testing data to increase a bit.
+
+```{r, echo=FALSE, warning = FALSE, message = FALSE}
+
+# model predictions
+library(yardstick)
+library(kableExtra)
+
+# calcualte RMSE for training data
+training1 <- broom::augment(model1) %>% 
+  drop_na(.fitted)
+
+training2 <- broom::augment(model2) %>% 
+  drop_na(.fitted)
+
+training3 <- broom::augment(model3) %>% 
+  drop_na(.fitted)
+
+training4 <- broom::augment(model4) %>% 
+  drop_na(.fitted)
+
+training5 <- broom::augment(model5) %>% 
+  drop_na(.fitted)
+
+training6 <- broom::augment(model6) %>% 
+  drop_na(.fitted)
+
+training7 <- broom::augment(model7) %>% 
+  drop_na(.fitted)
+
+training99 <- broom::augment(model99) %>% 
+  drop_na(.fitted)
+
+training0 <- broom::augment(model0) %>% 
+  drop_na(.fitted)
+
+rmse_train1 <- rmse(training1, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 1, 
+         set = "train")
+
+
+rmse_train2 <- rmse(training2, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 2, 
+         set = "train")
+
+
+rmse_train3 <- rmse(training3, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 3, 
+         set = "train")
+
+
+rmse_train4 <- rmse(training4, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 4, 
+         set = "train")
+
+
+rmse_train5 <- rmse(training5, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 5, 
+         set = "train")
+
+
+rmse_train6 <- rmse(training6, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 6, 
+         set = "train")
+
+
+rmse_train7 <- rmse(training7, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 7, 
+         set = "train")
+
+
+rmse_train0 <- rmse(training0, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 0, 
+         set = "train")
+
+rmse_train99 <- rmse(training99, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 99, 
+         set = "train")
+
+
+rmse_train <- 
+  rmse_train1 %>% 
+  bind_rows(rmse_train2, rmse_train3, rmse_train4, rmse_train5, rmse_train6, rmse_train7, rmse_train0, rmse_train99 ) %>% 
+  select(group,  rmse = .estimate, set) 
+
+
+
+## Testing datsa
+
+predictions1 <- broom::augment(model1, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions2 <- broom::augment(model2, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions3 <- broom::augment(model3, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions4 <- broom::augment(model4, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions5 <- broom::augment(model5, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions6 <- broom::augment(model6, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions7 <- broom::augment(model7, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions0 <- broom::augment(model0, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+predictions99 <- broom::augment(model99, newdata = new_bike) %>% 
+  drop_na(.fitted)
+
+
+
+rmse1 <- rmse(predictions1, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 1, 
+         set = "test")
+
+rmse2 <- rmse(predictions2, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 2, 
+         set = "test")
+
+rmse3 <- rmse(predictions3, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 3, 
+         set = "test")
+
+rmse4 <- rmse(predictions4, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 4, 
+         set = "test")
+
+rmse5 <- rmse(predictions5, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 5, 
+         set = "test")
+
+rmse6 <- rmse(predictions6, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 6, 
+         set = "test")
+
+rmse7 <- rmse(predictions7, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 7, 
+         set = "test")
+
+
+
+rmse0 <- rmse(predictions0, 
+              truth = bikes_hired, 
+              estimate = .fitted) %>% 
+  mutate(group = 0, 
+         set = "test")
+
+naive <- rmse0 %>% select(.estimate) %>% pull()
+
+rmse99 <- rmse(predictions99, 
+              truth = bikes_hired, 
+              estimate = .fitted)  %>% 
+  mutate(group = 99, 
+         set = "test")
+
+
+# %>% 
+#   mutate(improve_over_mean_rmse = rmse/naive - 1)
+
+
+rmse_test <- 
+  rmse1 %>% 
+  bind_rows(rmse2, rmse3, rmse4, rmse5, rmse6, rmse7, rmse0, rmse99)%>% 
+  select(group,  rmse = .estimate, set) 
+
+
+
+rmse_all_groups <- rmse_train %>%
+  bind_rows(rmse_test) %>% 
+  pivot_wider(names_from = "set",
+              values_from = "rmse") %>% 
+  mutate(delta_train_test = test/train-1)
+
+rmse_all_groups %>% 
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+# Checking Overfitting
+
+Its firaly easy to keep adding variables and/or feature engineer your model to increase its R2 as much as possible. However, how does your model fare when its applied to unseen data? In our case, we fitter the model in data up to Jul 2023, but we will use data from the lst 6 months (Aug 2023- Jan 2024) to see how well our model fits the data. We calculate the Root Mean Squared Error (RMSE) for both training data (where the model was fitted) and testing data (the unseen data). The following graph shows the difference between training and testing RMSE.
+
+```{r, echo= FALSE}
+library(ggrepel)
+
+rmse_all_groups %>% 
+  ggplot()+
+  aes(y=test, x = train, label=group)+
+  geom_point()+
+  geom_text_repel(size=4)+
+  theme_bw()+
+  theme(legend.position = "none")+
+  labs(title = "RMSE (Root Mean Squared Error)",
+       subtitle = "Numbers refer to study groups, 0 is the naive mean model",
+       x = "Train RMSE",
+       y = "Test RMSE")+
+  xlim(3000,10000)+
+  ylim(3000,10000)+
+  geom_abline(slope = 1, intercept = 0, color = "#001e62") + # Add a 45-degree line
+  NULL
+```
+
+
