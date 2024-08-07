@@ -103,7 +103,6 @@ us_election_polls_long <- us_election_polls %>%
 
 
 # use colour codes for parties
-# source: https://gist.github.com/Fischaela/0cf760f17672e3eb399193e48d7c6104
 # even though party colours is not straight-forward... 
 # https://blog.datawrapper.de/partycolors/
 

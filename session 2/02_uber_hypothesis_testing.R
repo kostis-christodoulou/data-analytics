@@ -83,10 +83,37 @@ uber %>%
 
 
 
-  
+
+# Summary Statistics ------------------------------------------------------
+
+
 options(digits = 5)
 # summary statistics of cancellation rate 
 favstats(cancellation_rate ~ group, data = uber)
 
 
+# Hypothesis Testing ------------------------------------------------------
+
+
+# 1 sample t-test. is group A cancellation rate 4%
+t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
+       
+       # pick only group A
+       data = uber %>% 
+         filter(group == 'A - 5 min'), 
+       
+       # Null hypothesis is that population mean = 4 minutes
+       mu = 4)
+
+# 1 sample t-test. is group B cancellation rate 4%
+t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
+       
+       # pick only group B
+       data = uber %>% 
+         filter(group == 'B - 2min'), 
+       
+       # Null hypothesis is that population mean = 4 minutes
+       mu = 4)
+
+# two-sample t-test/ Is the cancellation rate between the groups the same or not?
 t.test(cancellation_rate ~ group, data = uber)
