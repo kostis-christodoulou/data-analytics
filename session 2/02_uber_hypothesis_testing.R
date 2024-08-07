@@ -95,7 +95,7 @@ favstats(cancellation_rate ~ group, data = uber)
 # Hypothesis Testing ------------------------------------------------------
 
 
-# 1 sample t-test. is group A cancellation rate 4%
+# 1 sample t-test. is group A cancellation rate  = 4%
 t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
        
        # pick only group A
@@ -105,7 +105,7 @@ t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
        # Null hypothesis is that population mean = 4 percent
        mu = 4)
 
-# 1 sample t-test. is group B cancellation rate 4%
+# 1 sample t-test. is group B cancellation rate = 4%
 t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
        
        # pick only group B
@@ -115,5 +115,5 @@ t.test(cancellation_rate ~ 1, # ~1 run a 1-sample t-test
        # Null hypothesis is that population mean = 4 percent
        mu = 4)
 
-# two-sample t-test/ Is the cancellation rate between the groups the same or not?
+# two-sample t-test/ Is the mean cancellation rate between the groups the same or not?
 t.test(cancellation_rate ~ group, data = uber)
