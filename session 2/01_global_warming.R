@@ -5,14 +5,47 @@ library(mosaic)
 
 # read NASA temperature data. The tabular data of temperature anomalies can be found here
 # https://data.giss.nasa.gov/gistemp/tabledata_v4/NH.Ts+dSST.txt
-#  
-global_warming_data <- read_csv(here::here('data', 'global_warming_data.csv'))
+nasa_data <- 
+  read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/NH.Ts+dSST.csv", 
+           skip = 1, 
+           na = "***")
 
+# manipulate and tidy the data
+global_warming_data <- nasa_data %>%
+  
+  # pick the first 13 columns
+  select(1:13) %>% 
+  
+  # reshape into longer. tidy format
+  pivot_longer(cols = 2:13,
+               names_to = "month",
+              values_to = "delta") %>%
+  
+  # add full date as YYYY-MM-DD
+  # and add 'month' and 'year' in our dataframe
+  mutate(date = ymd(paste(as.character(Year), month, "1")),
+         month = month(date, label=TRUE),
+         year = year(date)) %>% 
+  
+  # pick the variables we want
+  select(date, year, month, delta) %>% 
+  
+  #create new variable 'interval', and assign values based on criteria below:
+  mutate(interval = case_when(
+    year %in% c(1881:1920) ~ "1881-1920",
+    year %in% c(1921:1950) ~ "1921-1950",
+    year %in% c(1951:1980) ~ "1951-1980",
+    year %in% c(1981:2010) ~ "1981-2010",
+    TRUE ~ "2011-present"
+  ))
+
+# explore resulting dataframe
+glimpse(global_warming_data)
 
 # summary statistics of delta vs. interval
 mosaic::favstats(delta ~ interval, data = global_warming_data)
 
-# hockeystick plot
+# Hokeystick plot  ----------------------------------------------
 ggplot(global_warming_data, aes(x=date, y = delta))+
   geom_point()+
   geom_smooth(color="red") +
@@ -29,6 +62,8 @@ ggplot(global_warming_data, aes(x=date, y = delta))+
     x = NULL
   )
 
+
+# Distribution of temperature anomalies by interval -----------------------
 ggplot(global_warming_data, aes(x=delta, fill=interval))+
   geom_density(alpha=0.2) +   #density plot with transparency set to 20%
   theme_bw() +                #theme
@@ -47,6 +82,8 @@ ggplot(global_warming_data, aes(x=delta, fill=interval))+
       )+
   NULL
 
+
+# ECDF for delta by interval ----------------------------------------------
 global_warming_data %>% 
   ggplot()+
   aes(x=delta, colour=interval)+
@@ -67,3 +104,4 @@ global_warming_data %>%
     y = NULL
   )+
   NULL
+
