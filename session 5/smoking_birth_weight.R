@@ -29,11 +29,6 @@ favstats(weight_kg ~ habit, data = smoking_birth_weight)
 t.test(weight_kg ~ habit, data = smoking_birth_weight)
 
 
-smoking_birth_weight %>% 
-  filter(!is.na(habit)) %>% 
-  select(weight_kg, habit ) %>% 
-  ggpairs()+
-  theme_bw()
 
 # model building
 
