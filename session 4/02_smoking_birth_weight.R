@@ -37,30 +37,30 @@ favstats(~weight_kg, data = smoking_birth_weight)
 # can you create a confidence interval for mean birth weight? What is the SE?
 
 
-model1 <- lm(weight_kg ~ 1, data= smoking_birth_weight)
+model0 <- lm(weight_kg ~ 1, data= smoking_birth_weight)
+msummary(model0)
+
+model1 <- lm(weight_kg ~ habit, data= smoking_birth_weight)
 msummary(model1)
 
 # What is the regression's residual standard error? 
 # What is the intercept standard error? 
 
 
-model2 <- lm(weight_kg ~ weeks, data= smoking_birth_weight)
+model2 <- lm(weight_kg ~ weeks + habit, data= smoking_birth_weight)
 msummary(model2)
 
-model3 <- lm(weight_kg ~ weeks + marital, data= smoking_birth_weight)
+model3 <- lm(weight_kg ~ weeks + habit + gender, data= smoking_birth_weight)
 msummary(model3)
 
-model4 <- lm(weight_kg ~ weeks + marital + habit, data= smoking_birth_weight)
+model4 <- lm(weight_kg ~ weeks + marital + habit + whitemom + gender + gained_kg, data= smoking_birth_weight)
 msummary(model4)
 
-model5 <- lm(weight_kg ~ weeks + marital + habit + whitemom + gender + gained_kg, data= smoking_birth_weight)
-msummary(model5)
-
-model6 <- lm(weight_kg ~ . , data= smoking_birth_weight)
-msummary(model6)
+model_all <- lm(weight_kg ~ . , data= smoking_birth_weight)
+msummary(model_all)
 
 # produce summary table comparing models using huxtable::huxreg()
-huxreg(model1, model2, model3, model4, model5, model6,
+huxreg(model0, model1, model2, model3, model4, model_all,
        statistics = c('#observations' = 'nobs', 
                       'R squared' = 'r.squared', 
                       'Adj. R Squared' = 'adj.r.squared', 

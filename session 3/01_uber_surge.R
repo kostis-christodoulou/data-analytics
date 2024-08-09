@@ -16,7 +16,7 @@ uber_surge <- read_csv(here::here('data', 'uber_surge.csv')) %>%
   janitor::clean_names()
 
 
-# ---------------------- Have a look at the datafile and calculate summary statistics ? ----------------------
+# ---------------------- Have a look at the datafile and calculate summary statistics  ----------------------
 
 uber_surge%>% 
   skim()
