@@ -43,7 +43,6 @@ There is no dropdown menu to read in your data to R, so instead we use functions
 bike <- read_csv(here::here("data", "london_bikes.csv")) %>% 
   mutate(weekend = if_else((wday == "Sat" | wday == "Sun"), TRUE, FALSE))
 
-
 ```
 
 ## Cleaning our data 
