@@ -67,7 +67,7 @@ us_election_polls <- polls[[6]] %>%  # the sixth table on the page contains the 
     # convert characters to numbers
     harris = parse_number(kamala_harris_democratic),
     trump = parse_number(donald_trump_republican),
-    other = parse_number(other_undecided),
+    other = parse_number(others_undecided),
     moe = parse_number(marginof_error),
     
     # apply our function to get closing date of poll as a character
@@ -90,7 +90,7 @@ us_election_polls <- polls[[6]] %>%  # the sixth table on the page contains the 
   # drop columns that are not needed
   select(-c(kamala_harris_democratic,
          donald_trump_republican, 
-         other_undecided,
+         others_undecided,
          marginof_error))
   
 
