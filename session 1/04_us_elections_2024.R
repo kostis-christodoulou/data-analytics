@@ -105,8 +105,6 @@ us_election_polls_long <- us_election_polls %>%
 # use colour codes for parties
 # even though party colours is not straight-forward... 
 # https://blog.datawrapper.de/partycolors/
-
-
 my_colour_palette = c(
   "#1b44c9", # Democrats
   "#E81B23"  # Republicans
