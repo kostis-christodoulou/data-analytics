@@ -144,7 +144,8 @@ winner %>%
 Write down the obtained equation, interpret it ("What does it mean?") and see whether it makes sense.
 
 ```{r}
-model2 <- lm(salary ~ experience, data=winner)
+# fit a linear model (lm) of salary on experience
+model2 <- lm(salary ~ ????? , data=winner)
 msummary(model2)
 confint(model2)
 ```
