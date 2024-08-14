@@ -21,8 +21,9 @@ library(car)
 library(ggfortify)
 library(performance)
 library(huxtable)
+library(kableExtra)
 
-options(digits=4)
+options(digits=5)
 
 # Some customization.  You can alter or delete as desired (if you know what you are doing).
 trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
@@ -40,11 +41,7 @@ This workshop does not have step-by-step guidelines. It gives you a good exercis
  
 At the last board meeting of Winner Plc., the headquarters of a large multinational company, the issue was raised that women were being discriminated in the company, in the sense that the salaries were not the same for male and female executives. A quick analysis of a sample of 50 employees (of which 24 men and 26 women) revealed that the average salary for men was about ?8,400 higher than for women. This seemed like a considerable difference, so it was decided that a further analysis of the company salaries was warranted. 
 
-# Assignment 
-
-You are asked to carry out the analysis. The objective is to find out whether there is indeed a significant difference between the salaries of men and women, and whether the difference is due to discrimination or whether it is based on another, possibly valid, determining factor. As part of this assignment, 4 out of the 10 questions on Quiz 3 relate to this case.
-
-## Loading and inspecting the data
+You are asked to carry out the analysis. The objective is to find out whether there is indeed a significant difference between the salaries of men and women, and whether the difference is due to discrimination or whether it is based on another, possibly valid, determining factor. As part of this assignment, 4 out of the 10 questions on concept check 2 relate to this case.
 
 
 ```{r load-data, echo=FALSE}
@@ -53,73 +50,116 @@ You are asked to carry out the analysis. The objective is to find out whether th
 # you learn to use the package 'here' that makes organising files easy
 # https://malco.io/2018/11/05/why-should-i-use-the-here-package/
 winner <- read_csv(here::here('data', 'Winner_for_R.csv'))
-skim(winner)
+
 ```
 
-# Relationship Salary - Gender ?
+# Salary on Gender
 
 The data frame `winner`  contains the salaries for the sample of 50 executives in the company. Can you conclude that there is a significant difference between the salaries of the male and female executives?
 
 Note that you can perform different types of analyses, and check whether they all lead to the same conclusion 
 
-.	Confidence intervals
-.	Hypothesis testing
-.	Correlation analysis
-.	Regression
+- Confidence intervals
+- Hypothesis testing
+- Correlation analysis
+- Regression
 
-```{r, confint_single_valiables}
+Here are summary statistics of salary by gender.
+
+```{r, echo=FALSE}
 # Summary Statistics of salary by gender
-favstats (salary ~ gender, data=winner)
+favstats (salary ~ gender, data=winner) |> 
+  select(-missing) |> 
+  mutate(se = sd/sqrt(n)) |> 
+  
+  # better table formatting
+  kable()  |> 
+  kable_styling()
 
+```
+
+The observed mean salary difference between men and women is delta* = 62577 - 71008 = -8431
+
+## Confidence Intervals
+
+> Can you create the 95, 99, and 99.9% confindence intervals 'by hand'?
+
+### 95% CI
+
+```{r}
 # t-Critical values for 95% intervals for male (n=24) and female (n=26) salaries
 qt(0.975, 23)  # t-critical for male 
 qt(0.975, 25)  # t-critical for female
-
-#can you create the CIs 'by hand'?
-
-#we can use filter to select only male and female salaries and assign them to different dataframes
-male_salary <- winner %>% 
-      filter (gender=="male")
-
-female_salary <- winner %>% 
-      filter (gender=="female")
+```
 
 
-t.test( ~salary, data = male_salary)
-t.test( ~salary, data = female_salary)
+### 99% CI
 
-confint(t.test( ~salary, data = male_salary)) # constructs a CI for male salaries
-confint(t.test( ~salary, data = female_salary)) # constructs a CI for female salaries
+
+```{r}
+# t-Critical values for 99% intervals for male (n=24) and female (n=26) salaries
+qt(0.995, 23)  # t-critical for male 
+qt(0.995, 25)  # t-critical for female
+```
+
+### 99.9% CI
+
+
+```{r}
+# t-Critical values for 99.9% intervals for male (n=24) and female (n=26) salaries
+qt(0.9995, 23)  # t-critical for male 
+qt(0.9995, 25)  # t-critical for female
 
 ```
 
-We can also runa a hypothesis testing, assuming as a null hypithesis that the mean differnee in salaries is zero, or that, on average, men and women make the same amount of money.
+
+## Hypothesis testing
+
+We can also run a a hypothesis testing, assuming as a null hypothesis that the mean difference in salaries is zero, or that, on average, men and women make the same amount of money.
 
 ```{r, hypothesis_testing}
-# Summary Statistics of salary by gender
-favstats (salary ~ gender, data=winner)
-
 t.test(salary ~ gender, data = winner)
-
-# constructs a CI for the difference in salaries. Does it contain 0?
-confint(t.test( salary ~ gender, data = winner)) 
-
-model1 <- lm(salary ~ gender, data = winner)
-msummary(model1)
 
 ```
 
-# Relationship Experience - Gender?
+Is the difference in salaries statistically significant? Why?
+
+## Regression
+```{r}
+model1 <- lm(salary ~ gender, data = winner)
+msummary(model1)
+```
+
+
+
+> What is the slope of `genderMale`? Is it similar to something you have seen before?
+
+
+# Experience on Gender
 
 At the board meeting, someone raised the issue that there was indeed a substantial difference between male and female salaries, but that this was attributable to other reasons such as differences in experience. A questionnaire send out to the 50 executives in the sample reveals that the average experience of the men is approximately 21 years, whereas the women only have about 7 years experience on average (see table below).
 
-```{r, experience_stats}
+```{r, experience_stats, echo=FALSE}
 # Summary Statistics of salary by gender
-favstats (experience ~ gender, data=winner)
+favstats (experience ~ gender, data=winner) |> 
+  select(-missing) |> 
+  mutate(se = sd/sqrt(n)) |> 
+  
+  # better table formatting
+  kable()  |> 
+  kable_styling()
 
 ```
 
-Based on this evidence, can you conclude that there is a significant difference between the experience of the male and female executives? Perform similar analyses as in the previous section. Does your conclusion validate or endanger your conclusion about the difference in male and female salaries?  
+> Can you construct two 95% CIs for the mean experience of men and women?
+
+
+```{r}
+t.test(experience ~ gender, data = winner)
+```
+
+> Based on this evidence, can you conclude that there is a significant difference between the experience of the male and female executives? Perform similar analyses as in the previous section. Does your conclusion validate or endanger your conclusion about the difference in male and female salaries?  
+
 
 # Salary on Experience
 
@@ -127,10 +167,10 @@ Someone at the meeting argues that clearly, a more thorough analysis of the rela
 
 Analyse the relationship between salary and experience. What can you conclude?
 
-##.	Visually inspect the data
+## Correlation- Scatteplot Diagram
 
 You can use `GGally:ggpairs()` to create a scatterplot and correlation matrix. Essentially, we pass our data frame `winner` to `GGally::ggpairs()` with no arguments.
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 winner %>% 
   select(gender, experience, salary) %>% 
   ggpairs(aes(fill=gender, alpha = 0.2))+
@@ -139,27 +179,25 @@ winner %>%
 
 
 ## Develop a sensible model
-`lm( Y ~ X, data= .)` allows for a regression analysis. It is best to assign this to an object, e.g., `model1 <- lm(Y~X, data= .)`.  When you carry out a regression analysis, in order to see the regression output, type `msummary(model1)`. Finally, `confint(model1)` gices us confidence intervals for the estimates.
-
-Write down the obtained equation, interpret it ("What does it mean?") and see whether it makes sense.
+`lm( Y ~ X, data= dataframe)` allows for a regression analysis. It is best to assign this to an object, e.g., `model1 <- lm(Y~X, data= .)`.  When you carry out a regression analysis, in order to see the regression output, type `msummary(model1)`. Finally, `confint(model1)` gives us confidence intervals for the estimates.
 
 ```{r}
 # fit a linear model (lm) of salary on experience
-model2 <- lm(salary ~ ????? , data=winner)
+model2 <- lm(salary ~ experience , data=winner)
 msummary(model2)
-confint(model2)
 ```
+> Write down the obtained equation, interpret it ("What does it mean?") and see whether it makes sense.
 
 
-## Check the goodness-of-fit
+### Check the goodness-of-fit
 
 Evaluate (adjusted) R2. What proportion of the overall variability in salary does our model explain?
 
-## Examine significance of variables
+### Examine significance of variables
 
 Evaluate t-values or p-values, and remove insignificant variables
 
-## Examine whether the model is well-specified
+### Examine whether the model is well-specified
 
 Besides fitting the model, we should also have a look at the residuals. Do they seem to follow a Normal Distribution? Is there a pattern in the residuals, or do they appear to be 'random'? Is the variance of the residuals constant or does it seem to increase with increasing values of X?
 
@@ -170,18 +208,15 @@ The second thing we must check is whether the residuals follow a Normal distribu
 ```{r model1_residuals}
 autoplot(model2)
 ```
-# Salary on Gender plus Experience
+# Salary on Gender + Experience
 
 Extend your analysis of the previous section to investigate whether there is salary discrimination based on gender or not.
-
-## Multiple regression in R
 
 To run a multiple regression model in R, use `lm( Y ~ X1 + X2 + X3, data= .)`
 
 ```{r}
 model3 <- lm(salary ~ experience + gender, data=winner)
 msummary(model3)
-confint(model3)
 ```
 
 ## Colinearity
@@ -192,12 +227,11 @@ Check for multicollinearity (i.e. correlated independent variables), and remove 
 vif(model3)
 ```
 
-No VIFs aere greater than 10, so we do not have any colinearity issues... but `gender` is no longer significant, so let us remove it from the regression.
+No VIFs aere greater than 5, so we do not have any colinearity issues... but `gender` is no longer significant, so let us remove it from the regression.
 
 ```{r}
 model4 <- lm(salary ~ experience, data=winner)
 msummary(model4)
-confint(model4)
 ```
 
 
@@ -208,7 +242,6 @@ Again at the meeting, someone was looking at the results of the analysis of sala
 
 Can you find any indication that this is the case? If yes, how can you modify your analysis to take this into account?
 
-The `makeFun()` function from the `mosaic` package can be used to display the predicted values from a regression model.
 
 ```{r}
 #let us look at the scatterplot of experience on salary, and add a linear trendline
@@ -229,22 +262,22 @@ ggplot(winner, aes(x=experience, y = salary, colour = gender))+
   geom_point()+
   geom_smooth(se=FALSE)+
   theme_minimal()
-```
-```{r}
+
 model5 <- lm(salary ~ sqrt(experience) + gender, data = winner)
 mosaic::msummary(model5)
-autoplot(model5)
 car::vif(model5)
 
+
+# no colinarity, but gender is not significant, so remove and rerun
 model6 <- lm(salary ~ sqrt(experience), data = winner)
 mosaic::msummary(model6)
-autoplot(model5)
+
 ```
 
-## Competing Models
+## Comparing Models
 
 Assess and compare different models to see which one is most sensible and fits the data best.
-```{r}
+```{r, echo=FALSE}
 huxreg(model1, model2, model3, model4, model5, model6,
        statistics = c('#observations' = 'nobs', 
                       'R squared' = 'r.squared', 
@@ -253,7 +286,7 @@ huxreg(model1, model2, model3, model4, model5, model6,
        bold_signif = 0.05, 
        stars = NULL
 ) %>% 
-  set_caption('Comparison of models')
+  set_caption('Comparison of models')  
 ```
 
 
