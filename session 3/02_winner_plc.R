@@ -4,21 +4,12 @@ library(skimr)
 library(mosaic)
 library(car)
 library(ggfortify)
-library(performance)
+library(broom)
 
 # while it's fine to know about working directories, I suggest 
 # you learn to use the package 'here' that makes organising files easy
 # https://malco.io/2018/11/05/why-should-i-use-the-here-package/
 winner <- read_csv(here::here('data', 'Winner_for_R.csv'))
-
-
-# ---------------------- Have a look at the datafile and calculate summary statistics ? ----------------------
-
-winner %>% 
-  skim()
-
-model0 <- lm(salary ~ 1, data = winner)
-mosaic::msummary(model0)
 
 
 # ---------------------- 1. Relationship Salary – Gender ? ----------------------
@@ -36,7 +27,8 @@ ggplot(winner, aes(x=salary, fill = gender))+
 ggplot(winner, aes(x=salary, y = gender, fill = gender))+
   geom_boxplot(alpha = 0.3)+
   theme_minimal()+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  labs(y=NULL)
 
 # t-test of salary by gender
 t.test(salary ~ gender, data = winner)
@@ -84,7 +76,7 @@ mosaic::msummary(model3)
 # ---------------------- 4. Relationship Salary - Gender- Experience ? ----------------------
 
 winner %>% 
-  select(salary, experience, gender) %>% 
+  select(gender, experience, salary) %>% 
   ggpairs(aes(fill=gender, alpha = 0.2))+
   theme_bw()
 
@@ -98,7 +90,6 @@ model4a <- lm(salary ~ experience, data = winner)
 mosaic::msummary(model4a)
 
 
-
 model5 <- lm(salary ~ sqrt(experience) + gender, data = winner)
 mosaic::msummary(model5)
 autoplot(model5)
@@ -107,3 +98,4 @@ car::vif(model5)
 model6 <- lm(salary ~ sqrt(experience), data = winner)
 mosaic::msummary(model6)
 autoplot(model6)
+

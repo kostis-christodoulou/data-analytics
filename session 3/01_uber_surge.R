@@ -5,7 +5,6 @@ library(mosaic)
 library(car)
 library(ggfortify)
 library(janitor)
-library(performance)
 library(broom)
 library(huxtable)
 
@@ -49,7 +48,7 @@ ggplot(uber_surge, aes(x = number_of_drivers,
   theme_bw()
 
 
-# regression of tick vs number of drivers
+# regression of pick up time vs number of drivers
 model1 <- lm(pick_up_time_min ~ number_of_drivers, data = uber_surge)
 mosaic::msummary(model1)
 
@@ -65,9 +64,8 @@ model1 %>%
 # regression model
 model2 <- lm(pick_up_time_min ~ number_of_drivers + surge_price, data = uber_surge)
 mosaic::msummary(model2)
-performance::check_model(model2)
-autoplot(model2)
 car::vif(model2)
+
 
 # High colinearity... number of drivers and surge price have a correlation of -0.98
 
@@ -95,13 +93,12 @@ ggplot(uber_surge, aes(x = number_of_drivers,
 
 
 model4 <- lm(pick_up_time_min ~ number_of_drivers + region, data = uber_surge)
-mosaic::msummary(model3)
-performance::check_model(model3)
+mosaic::msummary(model4)
 
 
 # ---------------------- 5. Comparison of models ----------------------
 
-huxreg(model0, model1, model2, model3, model4,
+huxreg(model1, model2, model3, model4,
        statistics = c('#observations' = 'nobs',
                       'R squared' = 'r.squared',
                       'Adj. R Squared' = 'adj.r.squared',

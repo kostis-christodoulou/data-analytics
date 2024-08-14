@@ -64,7 +64,26 @@ Note that you can perform different types of analyses, and check whether they al
 - Correlation analysis
 - Regression
 
-Here are summary statistics of salary by gender.
+## Visualisations
+
+First lets us draw a density plot (smoothed histogram) and a boxplot to look at the distribution of salaries by gender. Rememebr that the line in the middle of each box is the median, not the mean.
+
+```{r, echo=FALSE}
+
+ggplot(winner, aes(x=salary, fill = gender))+
+  geom_density(alpha = 0.3) +
+  theme_minimal()
+
+ggplot(winner, aes(x=salary, y = gender, fill = gender))+
+  geom_boxplot(alpha = 0.3)+
+  theme_minimal()+
+  theme(legend.position = "none")+
+  labs(y=NULL)
+
+```
+
+
+## Summary statistics
 
 ```{r, echo=FALSE}
 # Summary Statistics of salary by gender
@@ -139,6 +158,28 @@ msummary(model1)
 
 At the board meeting, someone raised the issue that there was indeed a substantial difference between male and female salaries, but that this was attributable to other reasons such as differences in experience. A questionnaire send out to the 50 executives in the sample reveals that the average experience of the men is approximately 21 years, whereas the women only have about 7 years experience on average (see table below).
 
+## Visualisations
+
+First lets us draw a density plot (smoothed histogram) and a boxplot to look at the distribution of salaries by gender. Rememebr that the line in the middle of each box is the median, not the mean.
+
+```{r, echo=FALSE}
+
+ggplot(winner, aes(x=experience, fill = gender))+
+  geom_density(alpha = 0.3) +
+  theme_minimal()
+
+ggplot(winner, aes(x=experience, y = gender, fill = gender))+
+  geom_boxplot(alpha = 0.3)+
+  theme_minimal()+
+  theme(legend.position = "none")+
+  labs(y=NULL)
+
+```
+
+
+## Summary statistics 
+
+
 ```{r, experience_stats, echo=FALSE}
 # Summary Statistics of salary by gender
 favstats (experience ~ gender, data=winner) |> 
@@ -167,19 +208,17 @@ Someone at the meeting argues that clearly, a more thorough analysis of the rela
 
 Analyse the relationship between salary and experience. What can you conclude?
 
-## Correlation- Scatteplot Diagram
+```{r, echo=FALSE}
 
-You can use `GGally:ggpairs()` to create a scatterplot and correlation matrix. Essentially, we pass our data frame `winner` to `GGally::ggpairs()` with no arguments.
-```{r, warning=FALSE, echo=FALSE}
 winner %>% 
-  select(gender, experience, salary) %>% 
-  ggpairs(aes(fill=gender, alpha = 0.2))+
+  select(experience, salary) %>% 
+  ggpairs()+
   theme_bw()
 ```
 
 
-## Develop a sensible model
-`lm( Y ~ X, data= dataframe)` allows for a regression analysis. It is best to assign this to an object, e.g., `model1 <- lm(Y~X, data= .)`.  When you carry out a regression analysis, in order to see the regression output, type `msummary(model1)`. Finally, `confint(model1)` gives us confidence intervals for the estimates.
+## Develop a sensible regression model
+
 
 ```{r}
 # fit a linear model (lm) of salary on experience
