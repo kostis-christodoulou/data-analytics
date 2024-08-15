@@ -85,6 +85,8 @@ ggplot(winner, aes(x=salary, y = gender, fill = gender))+
 
 ## Summary statistics
 
+The following table provides sumamry statistics. Confirm that the standard error (se) is equal to $$se = sd/sqrt(n)$$
+
 ```{r, echo=FALSE}
 # Summary Statistics of salary by gender
 favstats (salary ~ gender, data=winner) |> 
@@ -141,7 +143,7 @@ t.test(salary ~ gender, data = winner)
 
 ```
 
-Is the difference in salaries statistically significant? Why?
+> Is the difference in salaries statistically significant? Why?
 
 ## Regression
 ```{r}
@@ -230,23 +232,12 @@ msummary(model2)
 
 ### Check the goodness-of-fit
 
-Evaluate (adjusted) R2. What proportion of the overall variability in salary does our model explain?
+> Evaluate (adjusted) R2. What proportion of the overall variability in salary does our model explain?
 
 ### Examine significance of variables
 
-Evaluate t-values or p-values, and remove insignificant variables
+> Evaluate t-values or p-values, and remove insignificant variables
 
-### Examine whether the model is well-specified
-
-Besides fitting the model, we should also have a look at the residuals. Do they seem to follow a Normal Distribution? Is there a pattern in the residuals, or do they appear to be 'random'? Is the variance of the residuals constant or does it seem to increase with increasing values of X?
-
-First, we plot the residuals vs. the fitted (or predicted) values. This is a standard regression diagnostic plot to check whether there is no pattern in the residuals, as well as to test for heteroscedasticity, or whether the residuals appear to have unequal, non-constant variance.
-
-The second thing we must check is whether the residuals follow a Normal distribution. A normal scores, or a QQ plot,  allows us to check for skewness, kurtosis and outliers. (Note that the heteroscedasticity may show as apparent non-normality.)
-
-```{r model1_residuals}
-autoplot(model2)
-```
 # Salary on Gender + Experience
 
 Extend your analysis of the previous section to investigate whether there is salary discrimination based on gender or not.
@@ -260,7 +251,7 @@ msummary(model3)
 
 ## Colinearity
 
-Check for multicollinearity (i.e. correlated independent variables), and remove correlated independent variables from the model.
+> Check for multicollinearity (i.e. correlated independent variables), and remove correlated independent variables from the model.
 
 ```{r}
 vif(model3)
@@ -279,7 +270,7 @@ msummary(model4)
 
 Again at the meeting, someone was looking at the results of the analysis of salary versus experience, and said that it was to be expected that an employee with more experience than another employee would have a higher salary. However, he argued that the difference in salary between two people with 2 and 4 years experience would be higher than the difference in salary between two people with 26 and 28 years experience!
 
-Can you find any indication that this is the case? If yes, how can you modify your analysis to take this into account?
+> Can you find any indication that this is the case? If yes, how can you modify your analysis to take this into account?
 
 
 ```{r}
@@ -302,12 +293,18 @@ ggplot(winner, aes(x=experience, y = salary, colour = gender))+
   geom_smooth(se=FALSE)+
   theme_minimal()
 
+# R's best geom_smooth() line seems to show that in early years salary increases fast,
+# but after about 10-15 years, the increase in salary for an additional year of 
+# experience slows down. 
+
+# This look like a square root (sqrt) relationship, so let us try this.
+
 model5 <- lm(salary ~ sqrt(experience) + gender, data = winner)
 mosaic::msummary(model5)
 car::vif(model5)
 
 
-# no colinarity, but gender is not significant, so remove and rerun
+# no colinearity, but gender is not significant, so remove and rerun
 model6 <- lm(salary ~ sqrt(experience), data = winner)
 mosaic::msummary(model6)
 
@@ -327,8 +324,3 @@ huxreg(model1, model2, model3, model4, model5, model6,
 ) %>% 
   set_caption('Comparison of models')  
 ```
-
-
-# Closing Remarks
-
-Do you have any additional thoughts on whether there might be a gender disadvantage in the firm or not?
