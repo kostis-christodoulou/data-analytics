@@ -5,17 +5,16 @@ library(mosaic)
 library(ggridges)
 library(viridis)
 
-# while it's fine to know about working directories, I suggest 
-# you learn to use the package 'here' that makes organising files easy
-# https://malco.io/2018/11/05/why-should-i-use-the-here-package/
+# get file from 'data' directory
 movies <- read_csv(here::here('data', 'movies.csv'))
 
-# Get a glimpse of the data- which vairables do we have, etc
+# Get a glimpse of the data- which variables do we have, etc
 glimpse(movies)
 
-# Count how many movies 
+# Count how many movies in each genre
 movies %>% 
-  count(genre,sort=TRUE)
+  count(genre,
+        sort=TRUE) # sort them in descending order
 
 
 #**************************************
@@ -29,7 +28,7 @@ movies %>%
   theme(legend.position = "none")+
   labs(title = "Distribution of IMDB ratings by film genre",
        x = "Film Rating",
-       y = " ")+
+       y = NULL)+
   NULL
 
 # Plot histogram of ratings, faceted by genre
@@ -42,12 +41,12 @@ movies %>%
   theme(legend.position = "none")+
   labs(title = "Distribution of IMDB ratings by film genre",
        x = "Film Rating",
-       y = " ")+
+       y = NULL)+
   NULL
 
 
 
-# Plot ECDF of rating, faceted by genre
+# Plot Empirical Cumulative Density Function (ECDF) of ratings, faceted by genre
 movies %>%
   ggplot()+
   aes(x = rating, colour=genre) +
@@ -58,7 +57,7 @@ movies %>%
   theme(legend.position = "none")+
   labs(title = "Distribution of IMDB ratings by film genre",
        x = "Film Rating",
-       y = " ")+
+       y = NULL)+
   NULL
 
 #**************************************
@@ -72,7 +71,7 @@ movies %>%
   theme(legend.position = "none")+
   labs(title = "Distribution of IMDB ratings by film genre",
        x = "Film Rating",
-       y = " ")+
+       y = NULL)+
   NULL
 
 
@@ -132,7 +131,7 @@ ggplot() +
   aes(x=reorder(genre, mean_rating), y=mean_rating, colour=genre) +
   geom_point() +
   geom_errorbar(width=.5, aes(ymin=rating_low, ymax=rating_high)) + 
-  labs(x=" ",
+  labs(x=NULL,
        y= "Mean IMDB Rating", 
        title="Which film genres have the highest mean IMDB ratings?") + 
   theme_bw()+

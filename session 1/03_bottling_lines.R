@@ -6,9 +6,7 @@ library(ggridges)
 library(viridis)
 options(digits=4)
 
-# while it's fine to know about working directories, I suggest 
-# you learn to use the package 'here' that makes organising files easy
-# https://malco.io/2018/11/05/why-should-i-use-the-here-package/
+# read CSV file. 
 bottling_lines <- read_csv(here::here('data', 'bottling_lines.csv'))
 
 # Get a glimpse of the data- which vairables do we have, etc
@@ -29,12 +27,10 @@ bottling_lines <- bottling_lines %>%
 
 # Summary statistics for each machine
 mosaic::favstats(net_content ~ machine, data = bottling_lines)
-mosaic::favstats(delta ~ machine, data = bottling_lines)
-mosaic::favstats(delta_percent ~ machine, data = bottling_lines)
+
 
 # which bottles are rejected and cannot be sold? 
 # Lower control limit LCL = 2% below target
-
 bottling_lines <- bottling_lines %>% 
   
   mutate(lcl = 0.98 * target,
@@ -112,19 +108,10 @@ bottling_lines %>%
   aes(x = net_content, colour=machine) +
   stat_ecdf(geom = "step", pad = FALSE) +
 
-  # # add line for Lower Control Limit - LCL  
-  # geom_vline(aes(xintercept = lcl, colour = machine), 
-  #            linetype = "dotdash", 
-  #            colour = "#FF26B9")+
-  
-  # add line for target
- #  geom_vline(aes(xintercept = target, colour = machine))+
-
   # add line for mean net_content 
   geom_vline(aes(xintercept = mean_content, 
                  colour = machine),
              size = 1.3)+ 
-
   # add annotation for mean
   geom_text(aes(x=mean_content, 
                 label=paste0("\nMean = ",round(mean_content , digits = 2)), 
@@ -192,7 +179,7 @@ bottling_lines %>%
 
 
 
-
+# Summary stats of net content by machine
 favstats(net_content ~ machine, data = bottling_lines)
 
 
