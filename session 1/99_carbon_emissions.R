@@ -191,10 +191,6 @@ animation <- global_emissions_long |>
 
 animate(animation, height=600, width=900, renderer=gifski_renderer())
 
-anim_save("emissions_animation.gif", animation)
-
-
-
 
 #  Carbon Majors  --------
 
