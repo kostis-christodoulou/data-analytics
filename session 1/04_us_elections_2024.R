@@ -29,7 +29,7 @@ polls <- map(tables, . %>%
                janitor::clean_names())
 
 # list of relevant opinion polls
-polls[[6]]  # the sixth table on the page contains the list of all opinions polls
+polls[[4]]  #  table 4 on the page contains the list of all opinions polls
   
 # the dates of the opinion polls are given as, e.g. July 30 - August 2, 2024
 # We use a regular expression to extract the latest date and use that 
@@ -61,7 +61,7 @@ extract_latest_date <- function(date_string) {
 
 
 # manipulate- tidy data
-us_election_polls <- polls[[6]] %>%  # the sixth table on the page contains the list of all opinions polls
+us_election_polls <- polls[[4]] %>%  # table 4 on the page contains the list of all opinions polls
   filter(poll_source != "") %>%
   mutate(
     # convert characters to numbers
