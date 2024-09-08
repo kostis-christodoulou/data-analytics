@@ -21,13 +21,13 @@ uber_surge%>%
   skim()
 
 uber_surge %>% 
-  select(-region) %>% 
+  select(-region,-surge_price) %>% 
   ggpairs()+
   theme_bw()
 
 
 
-
+favstats(~pick_up_time_min, data=uber_surge)
 
 uber_surge %>% 
   ggpairs(aes(colour = region, alpha = 0.5))+
@@ -43,8 +43,9 @@ ggplot(uber_surge, aes(x = number_of_drivers,
                        y = pick_up_time_min
                        ))+
   geom_point()+
-  geom_smooth(method = "lm",
-              se = FALSE)+
+  geom_smooth(method = "loess", color="blue", se=F)+
+  #geom_smooth(method = "lm",
+  #            se = FALSE)+
   theme_bw()
 
 

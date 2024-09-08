@@ -80,12 +80,14 @@ us_election_polls <- polls[[4]] %>%  # table 4 on the page contains the list of 
   # Filter for polls after 2024-07-22, when Biden announced his official withdrawal 
   # and when Harris declared her candidacy for president. 
   filter(end_date > "2024-7-22") %>% 
+
+  filter(samplesize_b != "–") %>% 
   
   # separate sample size and likely audience
   # LV = Likely voters, RV = Registered Voters, A = Adults
-  separate_wider_delim(samplesize_b, 
+   separate_wider_delim(samplesize_b,
                        delim = " ",
-                       names = c("sample_size", "audience")) %>% 
+                       names = c("sample_size", "audience")) %>%
   
   # drop columns that are not needed
   select(-c(kamala_harris_democratic,
