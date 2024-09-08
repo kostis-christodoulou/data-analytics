@@ -1,3 +1,3 @@
 # Data Analytics for Managers
 
-All course files (data, code, etc.) used in EMBA Data Analytics, Feb-Apr 2024
+All course files (data, code, etc.) used in Data Analytics, 2024-2025
