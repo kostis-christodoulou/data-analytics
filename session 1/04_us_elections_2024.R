@@ -28,9 +28,6 @@ polls <- map(tables, . %>%
                html_table(fill=TRUE)%>% 
                janitor::clean_names())
 
-# list of relevant opinion polls
-polls[[4]]  #  table 4 on the page contains the list of all opinions polls
-  
 # the dates of the opinion polls are given as, e.g. July 30 - August 2, 2024
 # We use a regular expression to extract the latest date and use that 
 library(stringr)
@@ -61,7 +58,7 @@ extract_latest_date <- function(date_string) {
 
 
 # manipulate- tidy data
-us_election_polls <- polls[[4]] %>%  # table 4 on the page contains the list of all opinions polls
+us_election_polls <- polls[[6]] %>%  # the relevant table on the wikipedia page contains the list of all opinions polls
   filter(poll_source != "") %>%
   mutate(
     # convert characters to numbers
@@ -75,26 +72,24 @@ us_election_polls <- polls[[4]] %>%  # table 4 on the page contains the list of 
     
     # and now get it as a date object
     end_date = lubridate::mdy(end_date),
-    ) %>% 
-
+  ) %>% 
+  
   # Filter for polls after 2024-07-22, when Biden announced his official withdrawal 
   # and when Harris declared her candidacy for president. 
   filter(end_date > "2024-7-22") %>% 
-
-  filter(samplesize_b != "–") %>% 
   
   # separate sample size and likely audience
   # LV = Likely voters, RV = Registered Voters, A = Adults
-   separate_wider_delim(samplesize_b,
-                       delim = " ",
-                       names = c("sample_size", "audience")) %>%
+  #separate_wider_delim(samplesize_c, 
+  #                    delim = " ",
+  #                    names = c("sample_size", "audience")) %>% 
   
   # drop columns that are not needed
   select(-c(kamala_harris_democratic,
-         donald_trump_republican, 
-         others_undecided,
-         marginof_error))
-  
+            donald_trump_republican, 
+            others_undecided,
+            marginof_error))
+
 
 # time series plot
 us_election_polls_long <- us_election_polls %>% 
@@ -118,7 +113,7 @@ us_election_polls_long %>%
   aes(x=end_date, y= percent, colour = candidate)+
   geom_point(alpha=0.25)+
   scale_colour_manual(values = my_colour_palette)+
-  geom_smooth(se=F)+
+  geom_smooth()+
   theme_minimal()+
   scale_x_date(date_minor_breaks = "1 month")+
   labs(
@@ -126,7 +121,7 @@ us_election_polls_long %>%
     subtitle = "Polls since Jul 22, 2024",
     x = NULL, y = "Percent %",
     caption = "Source: https://en.wikipedia.org/wiki/Nationwide_opinion_polling_for_the_2024_United_States_presidential_election"
-    ) +
+  ) +
   # ensure title is top-left aligned
   theme(plot.title.position = "plot")+
   theme(text=element_text(size=12, family="Montserrat"))+
@@ -134,7 +129,7 @@ us_election_polls_long %>%
 
 
 # calculating a rolling average
-number_of_polls <- 7
+number_of_polls <- 8
 
 rolling_mean <- us_election_polls_long %>% 
   group_by(candidate) %>% 
@@ -142,19 +137,19 @@ rolling_mean <- us_election_polls_long %>%
   #  Use the rollmean() function from the zoo package to get a moving average of the last k polls
   # The first argument you want to specify is the variable you're averaging, percent in our case.
   # The second is the number of observations of that variable to average together, k=7
-    mutate(rolling_average = zoo::rollmean(percent, 
-                                 k = number_of_polls, 
-                                 fill = NA, 
-                                 align = "left"
-                                 ),
-           rolling_sd = zoo::rollapply(percent, 
+  mutate(rolling_average = zoo::rollmean(percent, 
+                                         k = number_of_polls, 
+                                         fill = NA, 
+                                         align = "left"
+  ),
+  rolling_sd = zoo::rollapply(percent, 
                               FUN=sd,
                               width = number_of_polls,
                               fill = NA,
                               align = "left"
-                              ),
-           lower = rolling_average - qt(0.975, number_of_polls - 1) * rolling_sd / sqrt(number_of_polls),
-           upper = rolling_average + qt(0.975, number_of_polls - 1) * rolling_sd / sqrt(number_of_polls),
+  ),
+  lower = rolling_average - qt(0.975, number_of_polls - 1) * rolling_sd / sqrt(number_of_polls),
+  upper = rolling_average + qt(0.975, number_of_polls - 1) * rolling_sd / sqrt(number_of_polls),
   )
 
 rolling_mean %>% 
@@ -164,7 +159,7 @@ rolling_mean %>%
   geom_smooth(se=F)+
   geom_ribbon(aes(ymin = lower, ymax = upper),  
               alpha = 0.1
-              ) +
+  ) +
   scale_colour_manual(values=my_colour_palette)+
   scale_fill_manual(values=my_colour_palette)+
   theme_minimal()+
@@ -179,5 +174,3 @@ rolling_mean %>%
   theme(plot.title.position = "plot")+
   theme(text=element_text(size=12, family="Lato"))+
   NULL
-  
-  

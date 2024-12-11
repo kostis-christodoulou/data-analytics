@@ -413,6 +413,15 @@ check_model(model3)
 
 What is the meaning of the effect (slope) of, e.g., `wdayMon`? What % of the variability of bikes_hired does your model explain?
 
+```{r}
+model4 <- lm(bikes_hired ~ mean_temp + wday + humidity + factor(month), data = bike)
+
+# look at model estimated
+msummary(model4)
+
+```
+
+
 
 ## **Further variables/questions to explore on your own**
 
