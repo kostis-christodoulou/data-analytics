@@ -132,51 +132,6 @@ ggplot(bike, aes(x=date, y=bikes_hired))+
 ```
 
 
-## Creating a Plot
-
-If you were a consultant or an analyst, would you be comfortable showing the plot you created in the previous section to your client? Think about it. Probably not. 
-
-In this section, we will refine our plot to make it presentable (and to communicate the information more effectively). 
-
-Without a title, it becomes harder to comprehend the information presented in the plot. In addition, the labels of the X and Y axes are set to the respective variable (column) names by default, and are not formatted in the same way. This is unprofessional, and in some cases, confusing.
-
-We start by using the `labs()` function to specify the title, the X-axis label and the Y-axis label. Notice that we are simply adding another layer to the previous plot by using the `+` symbol. 
-
-```{r, warning= FALSE}
-
-
-ggplot(bike, aes(x=date, y=bikes_hired))+
-  geom_point(alpha = 0.3)+
-  geom_smooth()+
-  theme_bw()+
-  labs(
-    title    = "TfL Daily Bike Rentals",
-    x        = "Day",
-    y        = "Number of Bikes Hired"
-  )+
-  NULL
-
-```
-
-The plot looks much better, but we can further improve the look of the plot using the default themes in R. The graph below uses a default theme called `theme_light()`.
-
-```{r, warning= FALSE}
-
-ggplot(bike, aes(x=date, y=bikes_hired))+
-  geom_point(alpha=0.5) +
-  geom_smooth(color="red", size=1.5) +
-  theme_bw()+
-  labs(
-    title    = "TfL Daily Bike Rentals",
-    x        = "Day",
-    y        = "Number of Bikes Hired"
-  )+
-  theme_light()+
-  NULL
-
-```
-
-
 ## Further graphs
 
 ```{r}
@@ -283,24 +238,7 @@ ggplot(bike, aes(x=mean_temp, y= bikes_hired, colour=season_name))+
   NULL
 
 
-temperature_by_season <- ggplot(bike, aes(x=mean_temp, y= bikes_hired,colour=season_name)) +
-  
-  # rather than using geom_point(), we use geom_point_interactive()
-  geom_point_interactive(aes( 
-    tooltip = glue::glue("Mean Temp: {mean_temp}\nBikes Hired: {bikes_hired}\nDate: {date}")),
-    alpha = 0.3) +
-  geom_smooth_interactive(se = FALSE, method = lm)+
-  theme_bw()+
-  facet_wrap(~season_name, ncol=1)+
-  #  facet_grid(season_name ~ weekend)+
-  
-  theme(legend.position = "none")+
-  NULL
 
-# you have created the ggplot object, you now pass it to
-girafe(
-  ggobj = temperature_by_season
-)
 
 ###### bikes on humidity
 ggplot(bike, aes(x=humidity, y= bikes_hired))+
@@ -349,6 +287,19 @@ model0 <- lm(bikes_hired ~ 1, data= bike)
 msummary(model0)
 
 
+# plot actual data vs predicted data
+broom::augment(model0) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
+
+
 ```
 
 What is the regression's residual standard error? What is the intercept standard error? 
@@ -366,7 +317,19 @@ msummary(model1)
 
 # Diagnostics
 autoplot(model1)
-check_model(model1)
+
+
+# plot actual data vs predicted data
+broom::augment(model1) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
 ```
 
 
@@ -384,7 +347,18 @@ msummary(model2)
 
 # Diagnostics
 autoplot(model2)
-check_model(model2)
+
+# plot actual data vs predicted data
+broom::augment(model2) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
 ```
 
 - Fit a regression model called `model2` with the following explanatory variables: `mean_temp` and `weekend` 
@@ -407,7 +381,18 @@ msummary(model3)
 
 # Diagnostics
 autoplot(model3)
-check_model(model3)
+
+# plot actual data vs predicted data
+broom::augment(model3) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
 ```
 
 
@@ -418,6 +403,18 @@ model4 <- lm(bikes_hired ~ mean_temp + wday + humidity + factor(month), data = b
 
 # look at model estimated
 msummary(model4)
+
+# plot actual data vs predicted data
+broom::augment(model4) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
 
 ```
 
@@ -458,7 +455,7 @@ ggplot(my_best_model, aes(x=day, y = bikes_hired)) +
 
 As you keep building your models, it makes sense to:
 
-1. Check the residuals, using `performance::check_model(model_x)`. You will always have some deviation from normality, especially for very high values of `n`
+1. Check the residuals, using `autoplot(model_x)`. You will always have some deviation from normality, especially for very high values of `n`
 1. As you start building models with more explanatory variables, make sure you use `car::vif(model_x)` to calculate the **Variance Inflation Factor (VIF)** for your predictors and determine whether you have colinear variables. A general guideline is that a VIF larger than 10 is large, and your model may suffer from collinearity. Remove the variable in question and run your model again without it.
 
 ```{r}
@@ -466,6 +463,7 @@ As you keep building your models, it makes sense to:
 
 vif(model2)
 vif(model3)
+vif(model4)
 
 ```
 
@@ -478,7 +476,7 @@ Create a summary table, using `huxtable` (https://am01-sep23.netlify.app/example
 ```{r}
 
 # produce summary table comparing models using huxtable::huxreg()
-huxreg(model0, model1, model2, model3, 
+huxreg(model0, model1, model2, model3, model4,
        statistics = c('#observations' = 'nobs', 
                       'R squared' = 'r.squared', 
                       'Adj. R Squared' = 'adj.r.squared', 
