@@ -8,6 +8,15 @@ library(lubridate) #to handle dates
 library(janitor)
 library(ggrepel)
 library(plotly)
+library(showtext)
+library(ggtext)
+
+# load fonts we will use
+font_add_google("Montserrat", "Montserrat") # official LBS font
+font_add_google("Lato", "Lato")
+
+## Automatically use showtext to render text for future devices
+showtext_auto()
 
 # DJIA Wikipedia page-- also contains a table with the 30 stocks that make up the DJIA
 djia_url <- "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average"
@@ -167,7 +176,7 @@ monthly_summaries %>%
   # Reorder the 'symbol' factor based on 'mean_return'
   mutate(
     symbol = fct_reorder(symbol, mean_return),  # Reorder symbols by mean return-- otherwise they will show in alphabetic order
-    contain_zero = ifelse(lower_95 > 0, TRUE, FALSE)  # Check if lower CI is greater than 0
+    contain_zero = ifelse(lower_95 < 0, TRUE, FALSE)  # Check if lower CI is greater than 0
   ) %>% 
   # Initialize ggplot
   ggplot() +
@@ -189,14 +198,21 @@ monthly_summaries %>%
     x = NULL,  # No label for x-axis
     y = NULL,  # No label for y-axis
     title = "95% CI for Mean Monthly Return of the 30 DJIA Stocks",  # Main title
-    subtitle = paste0(start_date, " to ", end_date)  # Subtitle with date range
+    subtitle = paste0(start_date, " to ", end_date),  # Subtitle with date range
+    colour = "Interval contains zero"  # Legend title              
   ) +
   
   # Use a clean theme for the plot
   theme_bw() +
   
   # Remove the legend from the plot
-  theme(legend.position = "none") +
+  # theme(legend.position = "none") +
+  
+  # Final theme customizations:
+  theme(
+    plot.title.position = "plot",                                    # Align title with plot edge
+    text = element_text(size=12, family="Montserrat")               # Set font to Montserrat, size 12
+  )+
   
   # End the pipeline
   NULL
@@ -240,6 +256,33 @@ by_year_monthly %>%
   NULL
 
 
+# Risk - return for 2024
+by_year_monthly %>% 
+  group_by(year,symbol) %>% 
+  summarise(mean_return = mean(monthly_returns, na.rm=TRUE),
+            sd_return = sd(monthly_returns, na.rm=TRUE),
+  ) %>% 
+  mutate(sp500 = ifelse(symbol == "SPY", TRUE, FALSE)) %>% 
+  filter(year== 2024) |> 
+  
+  ggplot(aes(x=sd_return, y = mean_return))+
+  geom_point(aes(color = sp500))+
+  geom_text_repel(aes(label = symbol, color = sp500), size = 4)+
+  theme_bw()+
+  scale_colour_manual(values = my_colours)+
+  theme(legend.position = "none")+
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Risk-Return tradeoff for DJIA stocks",
+    subtitle = paste0("Monthly returns ",start_date," to ", end_date),
+    x = "Risk (SD of monthly returns)",
+    y = "Mean Return" )+
+  NULL
+
+
+
+
 # Correlation-Scatterplot matrix of monthly returns for a few stocks, and the SPY
 
 library(GGally)
@@ -265,7 +308,7 @@ library(zoo)
 window <- 6
 
 rolling_sd <- myStocks_returns_monthly %>% 
-  filter(symbol %in% c("AAPL", "INTC", "BA", "MCD", "SPY")) %>% 
+  filter(symbol %in% c("AAPL", "INTC", "BA", "MCD", "SPY", "NVDA")) %>% 
   group_by(symbol) %>% 
   
   
@@ -312,7 +355,7 @@ total_returns <- myStocks_returns_daily %>%
 # Plot total return for selected stocks
 total_returns %>% 
   # Filter for specific stock symbols of interest
-  filter(symbol %in% c("AAPL", "MSFT", "GS", "PG", "AMZN", "V", "MCD", "MRK", "DIS", "INTC", "MMM", "BA")) %>% 
+  filter(symbol %in% c("AAPL", "MSFT", "GS", "PG", "AMZN", "V", "MCD", "MRK", "DIS", "INTC", "MMM", "BA", "NVDA")) %>% 
   
   # Group the filtered data by stock symbol again
   group_by(symbol) %>% 
