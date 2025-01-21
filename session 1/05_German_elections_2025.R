@@ -50,7 +50,36 @@ pattern <- "(?:.*–\\s*)?(\\d{1,2}\\s+[A-Z][a-z]{2}\\s+\\d{4})$"
 
 
 # manipulate- tidy data
-election_polls <- polls[[1]] |>   # the relevant table on the wikipedia page contains the list of all opinions polls
+polls_2025 <- polls[[1]] |>   # the relevant table on the wikipedia page contains the list of all opinions polls
+  # delete first row
+  slice(-1) |> 
+  
+  filter(samplesize != "–") |> 
+  
+  mutate(
+    # convert characters to numbers
+    samplesize = parse_number(samplesize),
+    # linke = parse_number(linke),
+    fw = parse_number(fw),
+    bsw = parse_number(bsw),
+    others = parse_number(others),
+    
+    # apply our function to get closing date of poll as a character
+    end_date = str_extract(fieldwork_date, pattern, group = 1),
+    
+    # and now get it as a date object
+    end_date = lubridate::dmy(end_date),
+    
+    
+  ) |> 
+  
+  
+  # drop columns that are not needed
+  select(-c(abs, others, lead))
+
+
+
+polls_2024 <- polls[[2]] |>   # the relevant table on the wikipedia page contains the list of all opinions polls
   # delete first row
   slice(-1) |> 
   
@@ -77,6 +106,62 @@ election_polls <- polls[[1]] |>   # the relevant table on the wikipedia page con
   # drop columns that are not needed
   select(-c(abs, others, lead))
 
+polls_2023 <- polls[[3]] |>   # the relevant table on the wikipedia page contains the list of all opinions polls
+  # delete first row
+  slice(-1) |> 
+  
+  filter(samplesize != "–") |> 
+  
+  mutate(
+    # convert characters to numbers
+    samplesize = parse_number(samplesize),
+    fw = parse_number(fw),
+    others = parse_number(others),
+    
+    # apply our function to get closing date of poll as a character
+    end_date = str_extract(fieldwork_date, pattern, group = 1),
+    
+    # and now get it as a date object
+    end_date = lubridate::dmy(end_date),
+    
+    
+  ) |> 
+  
+  
+  # drop columns that are not needed
+  select(-c(abs, others, lead))
+
+
+polls_2022 <- polls[[4]] |>   # the relevant table on the wikipedia page contains the list of all opinions polls
+  # delete first row
+  slice(-1) |> 
+  
+  filter(samplesize != "–") |> 
+  
+  mutate(
+    # convert characters to numbers
+    samplesize = parse_number(samplesize),
+    fw = parse_number(fw),
+    others = parse_number(others),
+    
+    # apply our function to get closing date of poll as a character
+    end_date = str_extract(fieldwork_date, pattern, group = 1),
+    
+    # and now get it as a date object
+    end_date = lubridate::dmy(end_date),
+    
+    
+  ) |> 
+  
+  
+  # drop columns that are not needed
+  select(-c(abs, others, lead))
+
+
+election_polls <- bind_rows(polls_2025, 
+                            polls_2024, 
+                            polls_2023,
+                            polls_2022) 
 
 # time series plot
 election_polls_long <- election_polls |> 
@@ -109,21 +194,49 @@ my_colour_palette = c(
   "#008000" #FW
 )
 
+
+# Take the election polls data and pipe it to ggplot
 election_polls_long %>% 
+  # Initialize an empty ggplot canvas
   ggplot()+
+
+    # Map variables to aesthetics: date on x-axis, percentage on y-axis, color by party
   aes(x=end_date, y= percent, colour = party)+
-  geom_point(alpha=0.50)+
+
+    # Add scatter points with 60% opacity to reduce overplotting
+  geom_point(alpha=0.60)+ 
+
+  # Apply custom colors for each party using predefined palette
   scale_colour_manual(values = my_colour_palette)+
-  geom_smooth(se=F)+
-  theme_minimal()+
-  scale_x_date(date_minor_breaks = "1 month")+
+  
+  # Use black and white theme for a clean, professional look
+  theme_bw()+
+  
+  # Customize x-axis date formatting:
+  scale_x_date(
+    date_labels = "%b %Y",        # Format as "Jan 2024"
+    date_breaks = "1 month",      # Major tick mark every month
+    date_minor_breaks = "1 month", # Minor tick mark every month
+    expand = c(0, 0)              # Remove padding around axis
+  )+
+  
+  # Customise y-axis 
+  scale_y_continuous(
+    breaks = seq(0, 40, by = 5),  # Major tick mark every 5%
+    expand = c(0, 0))+            # Remove padding from y-axis to start at exact values
+  
+  # Add title, axis labels, and source caption
   labs(
     title = "Opinion polling for the 2025 German election",
     x = NULL, y = "Percent %",
     caption = "Source: https://en.wikipedia.org/wiki/Opinion_polling_for_the_2025_German_federal_election"
   ) +
-  # ensure title is top-left aligned
-  theme(plot.title.position = "plot")+
-  theme(text=element_text(size=12, family="Montserrat"))+
-  NULL
+  
+  # Final theme customizations:
+  theme(
+    plot.title.position = "plot",                                    # Align title with plot edge
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),   # Rotate x-axis labels 45° and align them
+    text = element_text(size=12, family="Montserrat")               # Set font to Montserrat, size 12
+  )
+
 

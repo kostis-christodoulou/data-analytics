@@ -418,7 +418,28 @@ broom::augment(model4) |>
 
 ```
 
+```{r}
+model5 <- lm(bikes_hired ~ mean_temp + wday + min_temp + max_temp + sunshine +
+               humidity + factor(month) + radiation + precipitation, data = bike)
 
+# look at model estimated
+msummary(model5)
+
+# plot actual data vs predicted data
+broom::augment(model5) |> 
+  mutate(day=row_number()) |> 
+  ggplot()+
+  aes(x=day, y = bikes_hired)+
+  
+  geom_point(alpha = 0.2) +
+  geom_point(aes(y = .fitted), 
+             shape = 1, 
+             colour = "red", alpha = 0.2)+
+  theme_bw()
+
+vif(model5)
+
+```
 
 ## **Further variables/questions to explore on your own**
 

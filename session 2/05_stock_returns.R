@@ -26,7 +26,7 @@ djia <- map(tables, . %>%
 
 
 # constituents
-table1 <- djia[[2]] %>% # the second table on the page contains the ticker symbols
+table1 <- djia[[3]] %>% # the second table on the page contains the ticker symbols
   mutate(date_added = ymd(date_added),
          
          # if a stock is listed on NYSE, its symbol is, e.g., NYSE: MMM
