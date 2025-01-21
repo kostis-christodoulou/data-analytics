@@ -1,3 +1,3 @@
-# Data Analytics for Managers
+# Data Analytics
 
-All course files (data, code, etc.) used in Data Analytics, 2024-2025
+All course files (data, code, etc.) used in Data Analytics
