@@ -257,7 +257,7 @@ msummary(model3)
 vif(model3)
 ```
 
-No VIFs aere greater than 5, so we do not have any colinearity issues... but `gender` is no longer significant, so let us remove it from the regression.
+No VIFs are greater than 5, so we do not have any colinearity issues... but `gender` is no longer significant, so let us remove it from the regression.
 
 ```{r}
 model4 <- lm(salary ~ experience, data=winner)

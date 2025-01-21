@@ -43,9 +43,8 @@ ggplot(uber_surge, aes(x = number_of_drivers,
                        y = pick_up_time_min
                        ))+
   geom_point()+
-  geom_smooth(method = "loess", color="blue", se=F)+
-  #geom_smooth(method = "lm",
-  #            se = FALSE)+
+  geom_smooth(method = "lm",
+              se = FALSE)+
   theme_bw()
 
 
@@ -108,3 +107,4 @@ huxreg(model1, model2, model3, model4,
        stars = NULL
 ) %>%
   set_caption('Comparison of models')
+
