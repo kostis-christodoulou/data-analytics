@@ -275,9 +275,16 @@ by_year_monthly %>%
   scale_y_continuous(labels = scales::percent) +
   labs(
     title = "Risk-Return tradeoff for DJIA stocks",
-    subtitle = paste0("Monthly returns ",start_date," to ", end_date),
+    subtitle = "Monthly returns Jan- Dec 2024",
     x = "Risk (SD of monthly returns)",
     y = "Mean Return" )+
+  
+  # Final theme customizations:
+  theme(
+    plot.title.position = "plot",                                    # Align title with plot edge
+    text = element_text(size=12, family="Montserrat")               # Set font to Montserrat, size 12
+  )+
+  
   NULL
 
 
@@ -308,7 +315,7 @@ library(zoo)
 window <- 6
 
 rolling_sd <- myStocks_returns_monthly %>% 
-  filter(symbol %in% c("AAPL", "INTC", "BA", "MCD", "SPY", "NVDA")) %>% 
+  filter(symbol %in% c("AAPL", "INTC", "BA", "SPY", "NVDA")) %>% 
   group_by(symbol) %>% 
   
   
@@ -327,16 +334,24 @@ rolling_sd %>%
   ggplot(aes(x=date, y = rolling_sd, group=symbol, colour=symbol))+
   geom_line()+
   theme_bw()+
-  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent,
+                     expand = c(0, 0)    ) +
   scale_x_date(date_breaks="6 months", 
-               date_labels = "%b-%Y")+
+               date_labels = "%b-%Y",
+               expand = c(0, 0)    )+
   labs(title = "Rolling 6-month risk (SD) calculation",
        x = "",
        y = "")+
   facet_wrap(~symbol, 
-             scales = "free",
+             # scales = "free",
              ncol=1)+
   theme(legend.position = "none")+
+  
+  # Final theme customizations:
+  theme(
+    plot.title.position = "plot",                                    # Align title with plot edge
+    text = element_text(size=12, family="Montserrat")               # Set font to Montserrat, size 12
+  )+
   NULL
 
 
