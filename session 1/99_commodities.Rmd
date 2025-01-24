@@ -1,0 +1,226 @@
+---
+title: "Title of Report"
+author: "Author of this masterpiece"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+  html_document:
+    theme: flatly
+    highlight: zenburn
+  word_document:
+---
+
+
+```{r}
+#| label: load-libraries
+#| echo: false # This option disables the printing of code (only output is displayed).
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(tidyquant)
+library(showtext)
+library(ggtext)
+
+# load fonts we will use
+font_add_google("Montserrat", "Montserrat") # official LBS font
+font_add_google("Lato", "Lato")
+
+## Automatically use showtext to render text for future devices
+showtext_auto()
+```
+
+
+The following is a list of the data I download from FRED.
+
+- [`PCU32733273`](https://fred.stlouisfed.org/series/PCU32733273), Cement and Concrete Product Manufacturing 
+- [`PIORECRUSDM`](https://fred.stlouisfed.org/series/PIORECRUSDM), Global price of Iron Ore
+- [`PCOPPUSDM`](https://fred.stlouisfed.org/series/PCOPPUSDM), Global price of Copper
+- [`PALUMUSDM`](https://fred.stlouisfed.org/series/PALUMUSDM), Global price of Aluminum
+- [`POILBREUSDM`](https://fred.stlouisfed.org/series/POILBREUSDM), Global price of Brent Crude
+- [`WPU07`](https://fred.stlouisfed.org/series/WPU07), Producer Price Index by Commodity: Rubber and Plastic Products
+- [`WPS061`](https://fred.stlouisfed.org/series/WPS061), Producer Price Index by Commodity: Chemicals and Allied Products: Industrial Chemicals
+- [`PCU3253132531`](https://fred.stlouisfed.org/series/PCU3253132531), Producer Price Index by Industry: Fertilizer Manufacturing
+
+```{r}
+#| label: get-data-from-FRED
+#| echo: false # This option disables the printing of code (only output is displayed).
+#| message: false
+#| warning: false
+
+indicators <- c("PCU32733273", # Cement and Concrete Product Manufacturing 
+           "PIORECRUSDM", # Global price of Iron Ore
+           "PCOPPUSDM", # Global price of Copper
+           "PALUMUSDM", # Global price of Aluminum
+           "POILBREUSDM", #Global price of Brent Crude
+           "WPU07", # Producer Price Index by Commodity: Rubber and Plastic Products
+           "WPS061", # Producer Price Index by Commodity: Chemicals and Allied Products: Industrial Chemicals
+           "PCU3253132531" #Producer Price Index by Industry: Fertilizer Manufacturing
+           ) 
+
+
+my_data <- indicators |> 
+  # Fetch economic data for the specified indicators
+  tq_get(get = "economic.data",
+         from = "2021-01-01",  # Start date
+         to = Sys.Date()) |>   # End date (current system date)
+  
+  # Group the data by symbol (indicator)
+  group_by(symbol) |> 
+  
+  # Calculate the relative change in price compared to the first observation
+  mutate(delta = price / first(price)) |> 
+  
+  # Remove the grouping
+  ungroup() |> 
+  
+  # Create a new variable with more user-friendly names for each indicator
+  mutate(
+    new_name = case_when(
+      symbol == "PCU32733273" ~ "Cement", 
+      symbol == "PIORECRUSDM" ~ "Iron Ore",
+      symbol == "PCOPPUSDM" ~ "Copper",
+      symbol == "PALUMUSDM" ~ "Aluminum",
+      symbol == "POILBREUSDM" ~ "Brent Crude",
+      symbol == "WPU07" ~ "Rubber",
+      symbol == "WPS061" ~ "Industrial Chemicals",
+      symbol == "PCU3253132531" ~ "Fertilizer"
+    )
+  )
+
+
+
+```
+
+
+## Time series graph of indicators
+
+```{r, echo=FALSE}
+
+
+my_data |> 
+  
+  # plot the data using ggplot
+  ggplot() +
+  # Set aesthetic mappings: x-axis is date, y-axis is price, color by symbol
+  aes(x = date, y = price, colour = symbol) +
+  
+  # Add line geometry to create time series lines
+  geom_line() +
+  
+  # Apply a black and white theme
+  theme_bw() +
+  
+  # Create facets (subplots) for each indicator, wrapped into a 2-column layout
+  # with free scales for each facet
+  facet_wrap(~new_name,
+             ncol = 2,
+             scales = "free") +
+  
+  # Remove the legend
+  theme(legend.position = "none") +
+  
+  # Set the plot title, caption, and remove x and y axis labels
+  labs(title = "Price Evolution 2021-01-01 to today",
+       caption = "Source: FRED",
+       x = NULL, y = NULL) +
+  
+  # Ensure the title is top-left aligned
+  theme(plot.title.position = "plot") +
+  
+  # Set text properties: size 12, Lato font family
+  theme(text = element_text(size = 12, family = "Lato"))
+
+
+```
+
+## Time series graph of cumulative change
+
+```{r, echo=FALSE}
+
+
+my_data |> 
+  ggplot() +
+  # Set aesthetic mappings: x-axis is date, y-axis is delta (relative change), color by symbol
+  aes(x = date, y = delta, colour = symbol) +
+  
+  # Add line geometry to create time series lines
+  geom_line() +
+  
+  # Apply a black and white theme
+  theme_bw() +
+  
+  # Create facets (subplots) for each indicator, wrapped into a 2-column layout
+  # with free scales for each facet
+  facet_wrap(~new_name,
+             ncol = 2,
+             scales = "free") +
+  
+  # Remove the legend
+  theme(legend.position = "none") +
+  
+  # Format y-axis labels as percentages
+  scale_y_continuous(label = scales::percent) +
+  
+  # Set the plot title, caption, and remove x and y axis labels
+  labs(title = "Cumulative change since 2021-01-01",
+       caption = "Source: FRED",
+       x = NULL, y = NULL) +  
+  
+  # Ensure the title is top-left aligned
+  theme(plot.title.position = "plot") +
+  
+  # Set text properties: size 12, Montserrat font family
+  theme(text = element_text(size = 12, family = "Montserrat"))
+
+
+
+# rebase everything to 100%
+my_data |> 
+  mutate(new_name = fct_reorder(new_name, -delta)) |> 
+  ggplot()+
+  aes(x=date, y = delta, colour = new_name)+
+  geom_line()+
+  theme_bw()+
+  # facet_wrap(~new_name,
+  #            ncol = 2,
+  #            scales="free")+
+  # theme(legend.position = "none")+
+  scale_y_continuous(label = scales::percent)+
+  labs(title= "Cumulative change since 2021-01-01",
+       caption = "Source:FRED",
+       x=NULL, y = NULL, 
+       colour = "Commodity")+  
+  theme(plot.title.position = "plot")+ # ensure title is top-left aligned
+  theme(text=element_text(size=12, family="Montserrat"))
+
+
+```
+
+## Scatterplot - Correlation Matrix
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(GGally)
+
+
+my_data |> 
+  select(date, price, new_name) |> 
+  pivot_wider(names_from = new_name,
+              values_from = price) |> 
+  select(-date) |> 
+  ggpairs()+
+    labs(title= "Scatterplot- Correlation Matrix",
+       caption = "Source:FRED",
+       x=NULL, y = NULL, 
+       colour = "Commodity")+  
+  theme(plot.title.position = "plot")+ # ensure title is top-left aligned
+  theme(text=element_text(size=9, family="Lato"))
+
+```
+
+Finally, let us save the file so I can open it in PowerBI-- after all, we all make mistakes ;-)
+
+```{r}
+write_csv(my_data, "latest_fred_data.csv")
+```
+

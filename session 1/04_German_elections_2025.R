@@ -59,7 +59,7 @@ polls_2025 <- polls[[1]] |>   # the relevant table on the wikipedia page contain
   mutate(
     # convert characters to numbers
     samplesize = parse_number(samplesize),
-    # linke = parse_number(linke),
+    linke = parse_number(linke),
     fw = parse_number(fw),
     bsw = parse_number(bsw),
     others = parse_number(others),
@@ -229,6 +229,7 @@ election_polls_long %>%
   labs(
     title = "Opinion polling for the 2025 German election",
     x = NULL, y = "Percent %",
+    colour = "Party",
     caption = "Source: https://en.wikipedia.org/wiki/Opinion_polling_for_the_2025_German_federal_election"
   ) +
   
