@@ -161,6 +161,13 @@ ggplot(bike, aes(x=temp, y= bikes_hired, colour=season_name))+
   #  facet_wrap(~season_name, ncol=1)+
   NULL
 
+ggplot(bike, aes(x=temp, y= bikes_hired, colour=weekend))+
+  geom_point(alpha = 0.2)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme_bw()+
+  facet_wrap(~season_name, ncol=1)+
+  NULL
+
 
 # bikes on humidity
 ggplot(bike, aes(x=humidity, y= bikes_hired, colour = season_name))+
