@@ -133,7 +133,7 @@ ggplot(bike, aes(x=date, y=bikes_hired))+
 
 ## Further graphs
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Histogram faceted by month_name in 4 rows
 ggplot(bike, aes(x=bikes_hired))+
   geom_histogram()+
@@ -163,11 +163,16 @@ ggplot(bike, aes(x=temp, y= bikes_hired, colour=season_name))+
 
 
 # bikes on humidity
-ggplot(bike, aes(x=humidity, y= bikes_hired))+
-  geom_point()+
-  geom_smooth(method = "lm")+
+ggplot(bike, aes(x=humidity, y= bikes_hired, colour = season_name))+
+  geom_point(alpha = 0.5)+
+  geom_smooth(method = "lm", se = F)+
   theme_bw()+
   NULL
+
+bike |> 
+  select( temp, feelslike, humidity, precip, snow, windspeed, cloudcover, solarradiation, bikes_hired) |>
+  ggpairs()
+
 
 ```
 
@@ -421,7 +426,7 @@ huxreg(model0, model1, model2, model3, model4,
                       'Residual SE' = 'sigma'), 
        bold_signif = 0.05
 ) %>% 
-  set_caption('Comparison of models')
+  set_caption('Comparison of models') 
 
 ```
 
