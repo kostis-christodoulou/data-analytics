@@ -3,10 +3,10 @@ title: "Title of Report"
 author: "Author of this masterpiece"
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
   html_document:
     theme: flatly
     highlight: zenburn
+  pdf_document:
   word_document:
 ---
 
