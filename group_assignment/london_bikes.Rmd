@@ -25,7 +25,7 @@ library(performance)
 library(ggiraph)
 library(car)
 
-options(scipen=999) # turn off scientific notation
+# Explore the relationship between bikes hired and a bunch of explanatory variables
 
 
 ```
@@ -40,7 +40,8 @@ There is no dropdown menu to read in your data to R, so instead we use functions
 ```{r, warning= FALSE, message= FALSE}
 
 #read the CSV file
-bike <- read_csv(here::here("data", "london_bikes.csv")) 
+bike <- read_csv(here::here("data", "london_bikes.csv")) %>% 
+  mutate(weekend = if_else((wday == "Sat" | wday == "Sun"), TRUE, FALSE))
 
 ```
 
@@ -61,9 +62,7 @@ bike <- bike %>%
     year=year(date),
     month = month(date),
     month_name=month(date, label = TRUE),
-    day_of_week = wday(date, label = TRUE),
-    wday = as.character.factor(day_of_week),
-    weekend = if_else((day_of_week == "Sat" | day_of_week == "Sun"), TRUE, FALSE)) 
+    day_of_week = wday(date, label = TRUE)) 
 
 # generate new variable season_name to turn seasons from numbers to Winter, Spring, etc
 bike <- bike %>%  
@@ -113,6 +112,8 @@ favstats(bikes_hired ~ season_name, data=bike)
 
 ## Time series plot of bikes rented
 
+
+
 While summary statistics allow us to quickly disover key metrics that represent the data, they are often not sufficient by themselves. Often, it is useful to represent the data graphically (or visually) to uncover information that is critical for decision making, such as trends, patterns and outliers. 
 
 In this section we will create a time-series scatter-plot that shows the number of bikes hired on each day. We will use the `ggplot2` library. 
@@ -122,10 +123,24 @@ Creating a basic plot is a two-step process. The first step is the specify the d
 
 ```{r, warning= FALSE}
 
-ggplot(bike, aes(x=date, y=bikes_hired))+
-  geom_smooth()+
-  geom_point(alpha = 0.3)+
-  theme_bw()+
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  
+  # Create a ggplot object
+  ggplot() +
+  
+  # Map date to x-axis and bikes_hired to y-axis
+  aes(x = date, y = bikes_hired) +
+  
+  # Add scatter points with 40% transparency to reduce overplotting
+  geom_point(alpha = 0.4) +
+  
+  # Apply a clean black and white theme
+  theme_bw() +
+  
+  # NULL doesn't add anything - often used as a placeholder for easy code modification
   NULL
 
 ```
@@ -133,53 +148,155 @@ ggplot(bike, aes(x=date, y=bikes_hired))+
 
 ## Further graphs
 
-```{r, warning=FALSE, message=FALSE}
+```{r}
+# Histogram of bikes rented
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_histogram()+
+  theme_bw()+
+  NULL
+
+# Histogram faceted by season_name
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_histogram()+
+  facet_wrap(~season_name)+
+  theme_bw()+
+  NULL
+
+# Histogram faceted by month_name
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_histogram()+
+  facet_wrap(~month_name)+
+  theme_bw()+
+  NULL
+
 # Histogram faceted by month_name in 4 rows
-ggplot(bike, aes(x=bikes_hired))+
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
   geom_histogram()+
   facet_wrap(~month_name, nrow = 4)+
   theme_bw()+
   NULL
 
+
+# Density plot 
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_density()+
+  theme_bw()+
+  NULL
+
+# Density plot filled by season_name 
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_density(aes(fill=season_name), alpha = 0.3)+
+  theme_bw()+
+  NULL
+
+# Density plot filled by season_name, and faceted by season_name
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_histogram(aes(fill=season_name), alpha = 0.5)+
+  facet_wrap(~season_name, nrow = 4)+
+  theme_minimal()+
+  
+  #remove legend to the right
+  theme(legend.position = "none")+
+  NULL
+
+# Density plot filled by season_name, and faceted by month_name
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x = bikes_hired)+
+  geom_density(aes(fill=season_name), alpha = 0.3)+
+  facet_wrap(~month_name, nrow = 4)+
+  theme_bw()+
+  theme(legend.position="none")+
+  NULL
+
 #Boxplot of bikes_hired by month_name
-ggplot(bike, aes(x=month_name, y= bikes_hired))+
+
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x=month_name, y= bikes_hired)+
   geom_boxplot()+
   theme_bw()+
   NULL
 
+
 # bikes_hired vs. weather features
-ggplot(bike, aes(x=temp, y= bikes_hired))+
+
+bike %>% 
+  
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x=temp, y= bikes_hired)+
   geom_point()+
   geom_smooth(method = "lm", se=FALSE)+
   theme_bw()+
   NULL
 
-ggplot(bike, aes(x=temp, y= bikes_hired, colour=season_name))+
-  geom_point(alpha = 0.2)+
+
+bike %>% 
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x=temp, y= bikes_hired,
+       colour=season_name)+
+  geom_point(alpha = 0.1)+
   geom_smooth(method = "lm", se=FALSE)+
   theme_bw()+
-  #  facet_wrap(~season_name, ncol=1)+
   NULL
 
-ggplot(bike, aes(x=temp, y= bikes_hired, colour=weekend))+
-  geom_point(alpha = 0.2)+
+
+###### bikes on humidity
+bike %>% 
+  # Filter the bike dataset to include only data from January 1, 2014 onwards
+  filter(date >= lubridate::ymd("2014-01-01")) %>%  
+  ggplot()+
+  aes(x=humidity, y= bikes_hired,
+       colour=season_name)+
+  geom_point(alpha = 0.1)+
   geom_smooth(method = "lm", se=FALSE)+
   theme_bw()+
-  facet_wrap(~season_name, ncol=1)+
   NULL
-
-
-# bikes on humidity
-ggplot(bike, aes(x=humidity, y= bikes_hired, colour = season_name))+
-  geom_point(alpha = 0.5)+
-  geom_smooth(method = "lm", se = F)+
-  theme_bw()+
-  NULL
-
-bike |> 
-  select( temp, feelslike, humidity, precip, snow, windspeed, cloudcover, solarradiation, bikes_hired) |>
-  ggpairs()
-
 
 ```
 
@@ -187,7 +304,7 @@ bike |>
 
 ## Correlation - Scatterplot matrix
 
-Besides the number of bikes rented out on a given day, we have also downloaded weather data for London such as `temp`, `humidity`, `sealevelpressure`, `precip`, etc. that measure weather conditions on a single day. It may be the case that more bikes are rented out when it's warmer? Or how can we estimate the effect of rain on rentals?
+Besides the number of bikes rented out on a given day, we have also downloaded weather data for London such as `mean_temp`, `humidity`, `pressure`, `precipitation`, etc. that measure weather conditions on a single day. It may be the case that more bikes are rented out when it's warmer? Or how can we estimate the effect of rain on rentals?
 
 Your task is to build a regression model that helps you explain the number of rentals per day.  
 
@@ -197,7 +314,7 @@ Your task is to build a regression model that helps you explain the number of re
 ```{r, warning= FALSE, message=FALSE}
 
 bike %>% 
-  select(cloudcover, humidity, sealevelpressure, solarradiation, precip, solarradiation, temp, bikes_hired) %>% 
+  select(cloudcover, humidity, precip, temp, feelslike, bikes_hired) %>% 
   GGally::ggpairs()
 
 ```
@@ -218,7 +335,6 @@ favstats(~bikes_hired, data = bike)
 # can you create a confidence interval for mean bikes_hired? What is the SE?
 
 model0 <- lm(bikes_hired ~ 1, data= bike)
-
 msummary(model0)
 
 
@@ -241,15 +357,14 @@ What is the regression's residual standard error? What is the intercept standard
 
 
 
-## Model 1: `bikes_hired` on `temp`
+## Model 1: `bikes_hired` on `mean_temp`
 
 ```{r}
 # Define the model
-model1 <- lm(bikes_hired ~ temp, data = bike)
+model1 <- lm(bikes_hired ~ feelslikemax, data = bike)
 
 # look at model estimated
 msummary(model1)
-
 
 # plot actual data vs predicted data
 broom::augment(model1) |> 
@@ -265,17 +380,18 @@ broom::augment(model1) |>
 ```
 
 
-  - Is the effect of `temp` significant? Why?
+  - Is the effect of `mean_temp` significant? Why?
   - What proportion of the overall variability in bike rentals does temperature explain?
 
-## Model 2: `bikes_hired` on `temp` plus `weekend`
+## Model 2: `bikes_hired` on `mean_temp` plus `weekend`
 
 ```{r}
 # Define the model
-model2 <- lm(bikes_hired ~ temp + weekend, data = bike)
+model2 <- lm(bikes_hired ~ feelslikemax + weekend, data = bike)
 
 # look at model estimated
 msummary(model2)
+
 
 # plot actual data vs predicted data
 broom::augment(model2) |> 
@@ -290,16 +406,16 @@ broom::augment(model2) |>
   theme_bw()
 ```
 
-- Fit a regression model called `model2` with the following explanatory variables: `temp` and `weekend` 
+- Fit a regression model called `model2` with the following explanatory variables: `mean_temp` and `weekend` 
 
-  - Is the effect of `temp` significant? Why?
+  - Is the effect of `mean_temp` significant? Why?
   - What proportion of the overall variability  does this model explain?
 What is the meaning of the effect (slope) of `weekendTRUE`? What % of the variability of bikes_hired does your model explain?
 
 
 
 
-## Model 3: `bikes_hired` on `temp` plus `wday`
+## Model 3: `bikes_hired` on `mean_temp` plus `wday`
 
 ```{r}
 # Define the model
@@ -308,8 +424,6 @@ model3 <- lm(bikes_hired ~ temp + wday, data = bike)
 # look at model estimated
 msummary(model3)
 
-# Diagnostics
-autoplot(model3)
 
 # plot actual data vs predicted data
 broom::augment(model3) |> 
@@ -328,7 +442,7 @@ broom::augment(model3) |>
 What is the meaning of the effect (slope) of, e.g., `wdayMon`? What % of the variability of bikes_hired does your model explain?
 
 ```{r}
-model4 <- lm(bikes_hired ~ temp + wday + humidity + factor(month), data = bike)
+model4 <- lm(bikes_hired ~ feelslikemax + wday + humidity + factor(month), data = bike)
 
 # look at model estimated
 msummary(model4)
@@ -347,9 +461,11 @@ broom::augment(model4) |>
 
 ```
 
+
+
+
 ```{r}
-model5 <- lm(bikes_hired ~ temp + wday + tempmin + tempmax + feelslike + solarradiation +
-               humidity + factor(month) + solarradiation + precip, data = bike)
+model5 <- lm(bikes_hired ~  feelslikemax + humidity + factor(month) + precip, data = bike)
 
 # look at model estimated
 msummary(model5)
@@ -366,9 +482,9 @@ broom::augment(model5) |>
              colour = "red", alpha = 0.2)+
   theme_bw()
 
-vif(model5)
-
 ```
+
+
 
 ## **Further variables/questions to explore on your own**
 
@@ -433,7 +549,7 @@ huxreg(model0, model1, model2, model3, model4,
                       'Residual SE' = 'sigma'), 
        bold_signif = 0.05
 ) %>% 
-  set_caption('Comparison of models') 
+  set_caption('Comparison of models')
 
 ```
 
